@@ -1,118 +1,270 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>You're Invited — Clara & Alex</title>
-  <meta name="description" content="Wedding of Clara & Alex — join us to celebrate on June 12, 2026. RSVP inside." />
+  <title>You're Invited — Clara & Li Bo</title>
+  <meta name="description" content="Wedding of Clara & Li Bo — join us to celebrate on May 20, 2026. RSVP inside." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css_styles.css">
 </head>
 <body>
-  <main class="container">
-    <header class="hero">
-      <div class="hero-content">
-        <h1 class="names">Clara &amp; Alex</h1>
-        <p class="subtitle">We invite you to celebrate our wedding</p>
-        <p class="date">June 12, 2026 • 4:00 PM</p>
-        <a class="rsvp-cta" href="#rsvp">RSVP</a>
-      </div>
-      <div class="hero-image" aria-hidden="true">
-        <!-- Replace with a photo at assets/hero.jpg -->
-        <img src="assets/hero.jpg" alt="" />
-      </div>
-    </header>
-
-    <section id="details" class="card">
-      <h2>Details</h2>
-      <p>
-        Ceremony & reception at <strong>Seaside Gardens</strong>, 123 Beachside Ave, City.
-        Cocktail hour follows the ceremony.
-      </p>
-      <p>
-        Dress code: Garden Formal.
-      </p>
-    </section>
-
-    <section id="schedule" class="card">
-      <h2>Schedule</h2>
-      <ul>
-        <li><strong>3:30 PM</strong> Guests arrive</li>
-        <li><strong>4:00 PM</strong> Ceremony</li>
-        <li><strong>5:00 PM</strong> Cocktail hour</li>
-        <li><strong>6:30 PM</strong> Dinner &amp; dancing</li>
+  <!-- Fixed Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#home" class="nav-logo">C & L</a>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <ul class="nav-menu" id="nav-menu">
+        <li><a href="#home" class="nav-link active">首頁</a></li>
+        <li><a href="#about" class="nav-link">關於我們</a></li>
+        <li><a href="#wedding-info" class="nav-link">婚禮資訊</a></li>
+        <li><a href="#gallery" class="nav-link">相簿</a></li>
+        <li><a href="#rsvp" class="nav-link nav-cta">RSVP</a></li>
       </ul>
-    </section>
+    </div>
+  </nav>
 
-    <section id="location" class="card">
-      <h2>Location</h2>
-      <p>Seaside Gardens — 123 Beachside Ave</p>
-      <!-- Replace the src below with a Google Maps embed for your venue -->
-      <div class="map-wrap" aria-hidden="false">
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!..."
-          width="600" height="350" style="border:0;" allowfullscreen="" loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"></iframe>
+  <!-- Hero Section -->
+  <header id="home" class="hero">
+    <div class="hero-overlay"></div>
+    <div class="floral-decoration floral-top-left"></div>
+    <div class="floral-decoration floral-top-right"></div>
+    <div class="floral-decoration floral-bottom-left"></div>
+    <div class="floral-decoration floral-bottom-right"></div>
+    <div class="hero-content">
+      <p class="hero-subtitle">We're Getting Married</p>
+      <h1 class="hero-names">Clara <span class="ampersand">&</span> Li Bo</h1>
+      <div class="hero-divider">
+        <span class="divider-line"></span>
+        <span class="divider-heart">♥</span>
+        <span class="divider-line"></span>
+      </div>
+      <p class="hero-date">May 20, 2026</p>
+      <p class="hero-venue">Seaside Gardens</p>
+      <a class="hero-cta" href="#rsvp">RSVP Now</a>
+    </div>
+    <div class="scroll-indicator">
+      <span></span>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- About Section -->
+    <section id="about" class="section about-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">關於我們</h2>
+          <p class="section-subtitle">Our Love Story</p>
+        </div>
+        <div class="about-content">
+          <div class="about-image">
+            <img src="assets/hero.jpg" alt="Clara & Li Bo">
+          </div>
+          <div class="about-text">
+            <h3>我們的故事</h3>
+            <p>我們在一個溫暖的春日相遇，從那一刻起，我們就知道這是命中注定的緣分。經過多年的相知相守，我們決定攜手步入婚姻的殿堂。</p>
+            <p>感謝您一直以來的支持與祝福，我們誠摯地邀請您來見證這個特別的時刻。</p>
+            <div class="about-signature">
+              <span>Clara & Li Bo</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section id="gallery" class="card">
-      <h2>Gallery</h2>
-      <div class="gallery-grid">
-        <!-- Add your images to assets/ and update src -->
-        <img src="assets/photo1.jpg" alt="Photo 1">
-        <img src="assets/photo2.jpg" alt="Photo 2">
-        <img src="assets/photo3.jpg" alt="Photo 3">
+    <!-- Wedding Info Section -->
+    <section id="wedding-info" class="section wedding-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">婚禮資訊</h2>
+          <p class="section-subtitle">Wedding Details</p>
+        </div>
+
+        <!-- Countdown Timer -->
+        <div class="countdown-wrapper">
+          <h3 class="countdown-title">距離我們的大日子還有</h3>
+          <div class="countdown" id="countdown">
+            <div class="countdown-item">
+              <span class="countdown-number" id="days">000</span>
+              <span class="countdown-label">天</span>
+            </div>
+            <div class="countdown-separator">:</div>
+            <div class="countdown-item">
+              <span class="countdown-number" id="hours">00</span>
+              <span class="countdown-label">時</span>
+            </div>
+            <div class="countdown-separator">:</div>
+            <div class="countdown-item">
+              <span class="countdown-number" id="minutes">00</span>
+              <span class="countdown-label">分</span>
+            </div>
+            <div class="countdown-separator">:</div>
+            <div class="countdown-item">
+              <span class="countdown-number" id="seconds">00</span>
+              <span class="countdown-label">秒</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="info-cards">
+          <div class="info-card">
+            <div class="info-icon">📍</div>
+            <h3>地點</h3>
+            <p><strong>Seaside Gardens</strong></p>
+            <p>123 Beachside Ave, City</p>
+          </div>
+          <div class="info-card">
+            <div class="info-icon">📅</div>
+            <h3>日期</h3>
+            <p><strong>2026年5月20日</strong></p>
+            <p>星期三</p>
+          </div>
+          <div class="info-card">
+            <div class="info-icon">⏰</div>
+            <h3>時間</h3>
+            <p><strong>下午 4:00</strong></p>
+            <p>請提前抵達</p>
+          </div>
+          <div class="info-card">
+            <div class="info-icon">👔</div>
+            <h3>服裝</h3>
+            <p><strong>Garden Formal</strong></p>
+            <p>優雅花園正裝</p>
+          </div>
+        </div>
+
+        <!-- Schedule -->
+        <div class="schedule-section">
+          <h3 class="schedule-title">活動流程</h3>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-time">3:30 PM</div>
+              <div class="timeline-content">
+                <h4>賓客入場</h4>
+                <p>歡迎蒞臨，請享用迎賓飲品</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">4:00 PM</div>
+              <div class="timeline-content">
+                <h4>婚禮儀式</h4>
+                <p>見證我們的愛情誓言</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">5:00 PM</div>
+              <div class="timeline-content">
+                <h4>雞尾酒時光</h4>
+                <p>輕鬆交流，享用精緻小點</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">6:30 PM</div>
+              <div class="timeline-content">
+                <h4>晚宴 & 舞會</h4>
+                <p>美食佳餚，歡樂共舞</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div class="map-section">
+          <h3 class="map-title">場地位置</h3>
+          <div class="map-wrap">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!..."
+              width="600" height="350" style="border:0;" allowfullscreen="" loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section id="rsvp" class="card rsvp-card">
-      <h2>RSVP</h2>
-      <p>Please let us know by May 1, 2026.</p>
-
-      <!-- Option A: Formspree (recommended for static sites) -->
-      <form id="rsvp-form" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST">
-        <label>
-          Your name
-          <input type="text" name="name" required>
-        </label>
-
-        <label>
-          Email
-          <input type="email" name="email" required>
-        </label>
-
-        <label>
-          Will you attend?
-          <select name="attending" required>
-            <option value="">Choose</option>
-            <option value="yes">Yes — I will attend</option>
-            <option value="no">No — Sorry I can't make it</option>
-          </select>
-        </label>
-
-        <label>
-          Number of guests (including you)
-          <input type="number" name="guests" min="1" max="10" value="1">
-        </label>
-
-        <label>
-          Message (dietary restrictions, songs, etc.)
-          <textarea name="message" rows="3"></textarea>
-        </label>
-
-        <button type="submit" class="btn">Send RSVP</button>
-
-        <p class="form-note">If you'd rather email us directly: <a href="mailto:claraandalex@example.com">claraandalex@example.com</a></p>
-      </form>
+    <!-- Gallery Section -->
+    <section id="gallery" class="section gallery-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">相簿</h2>
+          <p class="section-subtitle">Our Gallery</p>
+        </div>
+        <div class="gallery-grid">
+          <div class="gallery-item"><img src="assets/photo1.jpg" alt="Photo 1"></div>
+          <div class="gallery-item"><img src="assets/photo2.jpg" alt="Photo 2"></div>
+          <div class="gallery-item"><img src="assets/photo3.jpg" alt="Photo 3"></div>
+          <div class="gallery-item"><img src="assets/photo1.jpg" alt="Photo 4"></div>
+          <div class="gallery-item"><img src="assets/photo2.jpg" alt="Photo 5"></div>
+          <div class="gallery-item"><img src="assets/photo3.jpg" alt="Photo 6"></div>
+        </div>
+      </div>
     </section>
 
-    <footer class="footer">
-      <p>We can't wait to celebrate with you 💕</p>
-    </footer>
+    <!-- RSVP Section -->
+    <section id="rsvp" class="section rsvp-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">RSVP</h2>
+          <p class="section-subtitle">請讓我們知道您是否能參加</p>
+        </div>
+        <div class="rsvp-card">
+          <p class="rsvp-deadline">請於 2026年5月1日 前回覆</p>
+          <form id="rsvp-form" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST">
+            <div class="form-group">
+              <label for="name">您的姓名</label>
+              <input type="text" id="name" name="name" required placeholder="請輸入您的姓名">
+            </div>
+
+            <div class="form-group">
+              <label for="email">電子郵件</label>
+              <input type="email" id="email" name="email" required placeholder="請輸入您的電子郵件">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="attending">是否出席？</label>
+                <select id="attending" name="attending" required>
+                  <option value="">請選擇</option>
+                  <option value="yes">是的，我會參加</option>
+                  <option value="no">抱歉，無法參加</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="guests">出席人數</label>
+                <input type="number" id="guests" name="guests" min="1" max="10" value="1">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="message">留言（飲食限制、歌曲推薦等）</label>
+              <textarea id="message" name="message" rows="4" placeholder="有任何想告訴我們的嗎？"></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">送出 RSVP</button>
+
+            <p class="form-note">如有任何問題，請聯繫我們：<a href="mailto:claraandalex@example.com">claraandalex@example.com</a></p>
+          </form>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <script src="js/main.js"></script>
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-names">Clara & Li Bo</div>
+      <p class="footer-date">May 20, 2026</p>
+      <p class="footer-message">We can't wait to celebrate with you 💕</p>
+    </div>
+  </footer>
+
+  <script src="js_main.js"></script>
 </body>
 </html>
