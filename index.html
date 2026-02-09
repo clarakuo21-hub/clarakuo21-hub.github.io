@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>You're Invited — Clara & Li Bo</title>
+  <title>You're Invited — Li Bo & Clara</title>
   <meta name="description" content="Wedding of 李博 & 郭亞弦 — join us to celebrate on May 20, 2026. RSVP inside." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css_styles.css">
 </head>
 <body>
   <!-- Fixed Navigation -->
   <nav class="navbar" id="navbar">
     <div class="nav-container">
-      <a href="#home" class="nav-logo">C & L</a>
+      <a href="#home" class="nav-logo">李 & 郭</a>
       <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
         <span></span>
         <span></span>
@@ -37,17 +37,26 @@
     <div class="floral-decoration floral-top-right"></div>
     <div class="floral-decoration floral-bottom-left"></div>
     <div class="floral-decoration floral-bottom-right"></div>
-    <div class="hero-content">
-      <p class="hero-subtitle">We're Getting Married</p>
-      <h1 class="hero-names">Clara <span class="ampersand">&</span> Li Bo</h1>
-      <div class="hero-divider">
-        <span class="divider-line"></span>
-        <span class="divider-heart">♥</span>
-        <span class="divider-line"></span>
+    <div class="hero-wrapper">
+      <!-- Left: Names and Info -->
+      <div class="hero-content">
+        <p class="hero-subtitle">We're Getting Married</p>
+        <h1 class="hero-names">李博 <span class="ampersand">&</span> 郭亞弦</h1>
+        <div class="hero-divider">
+          <span class="divider-line"></span>
+          <span class="divider-heart">♥</span>
+          <span class="divider-line"></span>
+        </div>
+        <p class="hero-date">May 06, 2026</p>
+        <p class="hero-venue">地點</p>
+        <a class="hero-cta" href="#rsvp">RSVP Now</a>
       </div>
-      <p class="hero-date">May 06, 2026</p>
-      <p class="hero-venue">Seaside Gardens</p>
-      <a class="hero-cta" href="#rsvp">RSVP Now</a>
+      <!-- Right: Arched Image -->
+      <div class="hero-image-side">
+        <div class="hero-arch-image">
+          <img src="assets/hero.jpg" alt="李博 & 郭亞弦">
+        </div>
+      </div>
     </div>
     <div class="scroll-indicator">
       <span></span>
@@ -64,16 +73,68 @@
         </div>
         <div class="about-content">
           <div class="about-image">
-            <img src="assets/hero.jpg" alt="Li Bo & Kuo Ya-Hsien">
+            <img src="assets/hero.jpg" alt="李博 & 郭亞弦">
           </div>
           <div class="about-text">
             <h3>我們的故事</h3>
             <p>我們在一個溫暖的春日相遇，從那一刻起，我們就知道這是命中注定的緣分。經過多年的相知相守，我們決定攜手步入婚姻的殿堂。</p>
             <p>感謝您一直以來的支持與祝福，我們誠摯地邀請您來見證這個特別的時刻。</p>
             <div class="about-signature">
-              <span>Li Bo & Kuo Ya-Hsien</span>
+              <span>李博 & 郭亞弦</span>
             </div>
           </div>
+        </div>
+
+        <!-- Our Journey Timeline -->
+        <div class="journey-wrapper">
+          <h3 class="journey-title">我們的旅程</h3>
+          <div class="journey-timeline">
+            <!-- Left Person -->
+            <div class="journey-person journey-left">
+              <div class="journey-photo">
+                <img src="assets/clara-child.jpg" alt="郭亞弦小時候">
+              </div>
+              <p class="journey-name">郭亞弦</p>
+            </div>
+            
+            <!-- Timeline -->
+            <div class="journey-line">
+              <div class="timeline-path">
+                <svg viewBox="0 0 200 300" preserveAspectRatio="none">
+                  <path class="line-left" d="M 30 0 Q 30 150, 100 150" fill="none" stroke="url(#goldGradient)" stroke-width="3"/>
+                  <path class="line-right" d="M 170 0 Q 170 150, 100 150" fill="none" stroke="url(#roseGradient)" stroke-width="3"/>
+                  <path class="line-together" d="M 100 150 L 100 300" fill="none" stroke="url(#togetherGradient)" stroke-width="3"/>
+                  <defs>
+                    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#C9A962"/>
+                      <stop offset="100%" stop-color="#D4A5A5"/>
+                    </linearGradient>
+                    <linearGradient id="roseGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#D4A5A5"/>
+                      <stop offset="100%" stop-color="#C9A962"/>
+                    </linearGradient>
+                    <linearGradient id="togetherGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#D4A5A5"/>
+                      <stop offset="100%" stop-color="#B8898A"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <div class="timeline-meeting-point">
+                <span class="meeting-year">2024</span>
+                <span class="meeting-heart">♥</span>
+              </div>
+            </div>
+            
+            <!-- Right Person -->
+            <div class="journey-person journey-right">
+              <div class="journey-photo">
+                <img src="assets/libo-child.jpg" alt="李博小時候">
+              </div>
+              <p class="journey-name">李博</p>
+            </div>
+          </div>
+          <p class="journey-caption">從陌生到相識，從相識到相愛，我們的故事在 2024 年交匯</p>
         </div>
       </div>
     </section>
@@ -117,8 +178,8 @@
           <div class="info-card">
             <div class="info-icon">📍</div>
             <h3>地點</h3>
-            <p><strong>Seaside Gardens</strong></p>
-            <p>123 Beachside Ave, City</p>
+            <p><strong>海濱花園</strong></p>
+            <p>123 海濱大道, 城市</p>
           </div>
           <div class="info-card">
             <div class="info-icon">📅</div>
@@ -259,8 +320,8 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="footer-content">
-      <div class="footer-names">Clara & Li Bo</div>
-      <p class="footer-date">May 06, 2026</p>
+      <div class="footer-names">Li Bo & Kuo YaHsien</div>
+      <p class="footer-date">May 6, 2026</p>
       <p class="footer-message">We can't wait to celebrate with you 💕</p>
     </div>
   </footer>
