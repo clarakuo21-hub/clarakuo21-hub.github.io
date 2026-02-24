@@ -48,56 +48,96 @@
   z-index: 10000;
   overflow: hidden;
   animation: fadeOut 1s ease-out 6.5s forwards;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
-/* 地圖背景 - 使用漸層和圓點創造世界地圖效果 */
-/* 💡 替換提示：如果您有地圖圖片，請將下面的background改為：
+/* 地圖背景
+   💡 替換提示：如果您有地圖圖片，可以在 .map-background 加上：
    background: url('asset/map-bg.jpg') center/cover no-repeat;
+   並將 .world-map-svg 設為 display:none;
 */
 .map-background {
   width: 100%;
   height: 100%;
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(212, 165, 165, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 40%, rgba(201, 169, 98, 0.1) 0%, transparent 50%),
-    linear-gradient(135deg, #FDF8F5 0%, #F5EBE6 100%);
+  background: linear-gradient(160deg, #FDF8F5 0%, #F0E6DF 40%, #F5EBE6 100%);
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 裝飾性地圖網格效果 */
-.map-background::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    repeating-linear-gradient(0deg, rgba(201, 169, 98, 0.08) 0px, transparent 1px, transparent 50px, rgba(201, 169, 98, 0.08) 51px),
-    repeating-linear-gradient(90deg, rgba(201, 169, 98, 0.08) 0px, transparent 1px, transparent 50px, rgba(201, 169, 98, 0.08) 51px);
-  opacity: 0.5;
+/* SVG 世界地圖 */
+.world-map-svg {
+  width: 90%;
+  max-width: 1100px;
+  height: auto;
+  opacity: 1;
+}
+
+/* 位置標記脈衝動畫 */
+.ping-ring {
+  animation: pingRing 2s ease-out infinite;
+  transform-origin: center;
+}
+
+@keyframes pingRing {
+  0%   { r: 6;  opacity: 0.8; }
+  100% { r: 20; opacity: 0; }
+}
+
+/* 飛行路線繪製動畫 */
+.flight-path-boy,
+.flight-path-girl {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  animation: drawPath 3.5s ease-in-out forwards;
+}
+
+.flight-path-girl {
+  animation-delay: 0.3s;
+}
+
+@keyframes drawPath {
+  to { stroke-dashoffset: 0; }
 }
 
 /* 小人物角色基礎樣式 */
 .character {
   position: absolute;
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 70px;
   z-index: 10;
+  text-align: center;
 }
 
-/* 男生初始位置 - 中國 🗺️ 調整位置：修改 left/top 值 */
+/* 角色名字標籤 */
+.character-label {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--ff-body-zh);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dark);
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(255,255,255,0.8);
+}
+
+/* 🗺️ 男生初始位置 - 中國
+   坐標對應 SVG viewBox(1000x500) 中  cx=720 cy=130
+   換算為百分比： left=72%, top=26%  */
 .character.boy {
-  left: 70%; /* 中國大致位置（畫面右側偏上） */
-  top: 35%;
+  left: 72%;
+  top: 26%;
   animation: moveBoyToGermany 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
 }
 
-/* 女生初始位置 - 台灣 🗺️ 調整位置：修改 left/top 值 */
+/* 🗺️ 女生初始位置 - 台灣
+   坐標對應 SVG viewBox(1000x500) 中  cx=776 cy=170
+   換算為百分比： left=77.6%, top=34%  */
 .character.girl {
-  left: 75%; /* 台灣位置（中國右下方） */
-  top: 45%;
+  left: 77.6%;
+  top: 34%;
   animation: moveGirlToGermany 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
 }
 
@@ -122,11 +162,11 @@
 
 /* 身體 */
 .character-body {
-  width: 24px;
-  height: 26px;
+  width: 20px;
+  height: 22px;
   border-radius: 50% 50% 60% 60%;
   position: absolute;
-  top: 26px;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -149,40 +189,41 @@
   background: linear-gradient(135deg, #F5AAD6 0%, #E68BB9 100%);
 }
 
-/* 男生移動到德國的弧線動畫 🗺️ 調整德國位置：修改關鍵幀中的位置值 */
+/* 🗺️ 男生移動到德國的弧線動畫
+   德國坐標對應 SVG cx=468 cy=80 → left=46.8%, top=16% */
 @keyframes moveBoyToGermany {
   0% {
-    left: 70%;
-    top: 35%;
+    left: 72%;
+    top: 26%;
     transform: scale(1) translateY(0);
   }
   50% {
-    left: 48%; /* 弧線中間點 */
-    top: 25%; /* 向上的弧線 */
-    transform: scale(1.2) translateY(-30px);
+    left: 57%;
+    top: 10%;
+    transform: scale(1.2) translateY(-20px);
   }
   100% {
-    left: 35%; /* 德國位置（畫面中央偏左上） */
-    top: 30%;
+    left: 46.8%;
+    top: 16%;
     transform: scale(1) translateY(0);
   }
 }
 
-/* 女生移動到德國的弧線動畫 🗺️ 調整德國位置：修改關鍵幀中的位置值 */
+/* 🗺️ 女生移動到德國的弧線動畫 */
 @keyframes moveGirlToGermany {
   0% {
-    left: 75%;
-    top: 45%;
+    left: 77.6%;
+    top: 34%;
     transform: scale(1) translateY(0);
   }
   50% {
-    left: 52%; /* 弧線中間點 */
-    top: 32%; /* 向上的弧線 */
-    transform: scale(1.2) translateY(-25px);
+    left: 60%;
+    top: 12%;
+    transform: scale(1.2) translateY(-20px);
   }
   100% {
-    left: 35%; /* 德國位置（與男生相同） */
-    top: 30%;
+    left: 46.8%;
+    top: 16%;
     transform: scale(1) translateY(0);
   }
 }
@@ -190,19 +231,49 @@
 /* 愛心動畫容器 */
 .heart-animation {
   position: absolute;
-  left: 35%; /* 🗺️ 德國位置 - 與角色終點相同 */
-  top: 30%;
+  left: 46.8%;  /* 🗺️ 德國位置 - 與角色終點相同 */
+  top: 16%;
   transform: translate(-50%, -50%);
   opacity: 0;
   animation: showHeart 1.5s ease-out 4s forwards;
   z-index: 20;
+  text-align: center;
 }
 
 .heart-svg {
-  width: 80px;
-  height: 80px;
+  width: 60px;
+  height: 60px;
   fill: #E74C3C;
   filter: drop-shadow(0 4px 12px rgba(231, 76, 60, 0.4));
+}
+
+.heart-text {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--ff-body-zh);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dusty-rose-dark);
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(255,255,255,0.9);
+}
+
+/* 跳過提示 */
+.skip-hint {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--ff-body-zh);
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  opacity: 0;
+  animation: fadeIn 0.5s ease 2s forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 0.6; }
 }
 
 /* 愛心出現動畫 */
@@ -242,62 +313,78 @@
 /* 手機優化 */
 @media (max-width: 768px) {
   .character {
+    width: 40px;
+    height: 55px;
+  }
+  
+  .character-head {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .character-body {
+    width: 16px;
+    height: 18px;
+    top: 18px;
+  }
+  
+  .character-label {
+    font-size: 10px;
+  }
+  
+  .heart-svg {
     width: 45px;
     height: 45px;
   }
   
-  .character-head {
-    width: 24px;
-    height: 24px;
+  .heart-text {
+    font-size: 11px;
   }
   
-  .character-body {
-    width: 18px;
-    height: 20px;
-    top: 20px;
+  .world-map-svg {
+    width: 95%;
   }
   
-  .heart-svg {
-    width: 60px;
-    height: 60px;
+  .world-map-svg text {
+    font-size: 8px !important;
   }
   
   /* 調整移動路徑適應小螢幕 */
   @keyframes moveBoyToGermany {
     0% {
-      left: 65%;
-      top: 35%;
+      left: 68%;
+      top: 28%;
     }
     50% {
-      left: 48%;
-      top: 28%;
-      transform: scale(1.15) translateY(-20px);
+      left: 55%;
+      top: 12%;
+      transform: scale(1.15) translateY(-15px);
     }
     100% {
-      left: 40%;
-      top: 32%;
+      left: 45%;
+      top: 18%;
     }
   }
   
   @keyframes moveGirlToGermany {
     0% {
-      left: 70%;
-      top: 42%;
+      left: 74%;
+      top: 35%;
     }
     50% {
-      left: 52%;
-      top: 35%;
-      transform: scale(1.15) translateY(-15px);
+      left: 58%;
+      top: 15%;
+      transform: scale(1.15) translateY(-12px);
     }
     100% {
-      left: 40%;
-      top: 32%;
+      left: 45%;
+      top: 18%;
     }
   }
   
   .heart-animation {
-    left: 40%;
-    top: 32%;
+    left: 45%;
+    top: 18%;
   }
 }
 
