@@ -3,6 +3,9 @@
 // ====================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize opening animation
+  initOpeningAnimation();
+  
   // Initialize all features
   initCountdown();
   initNavigation();
@@ -10,6 +13,37 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollAnimations();
   initRSVPForm();
 });
+
+// ====================================
+// Opening Animation
+// ====================================
+function initOpeningAnimation() {
+  const overlay = document.getElementById('opening-animation');
+  if (!overlay) return;
+  
+  // 動畫時間軸：
+  // 0-4s: 兩個小人移動
+  // 4-5.5s: 愛心出現並停留
+  // 5.5-6.5s: 淡出
+  // 總計: 6.5秒後移除overlay
+  
+  // 7.5秒後完全移除元素（給淡出動畫多一點時間）
+  setTimeout(() => {
+    if (overlay && overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
+    }
+  }, 7500);
+  
+  // 可選：添加點擊跳過功能（點擊任意處立即進入主頁）
+  overlay.addEventListener('click', () => {
+    overlay.style.animation = 'fadeOut 0.5s ease-out forwards';
+    setTimeout(() => {
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+    }, 500);
+  });
+}
 
 // ====================================
 // Countdown Timer

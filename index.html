@@ -11,6 +11,35 @@
   <link rel="stylesheet" href="css_styles.css">
 </head>
 <body>
+  <!-- Opening Animation Overlay -->
+  <div id="opening-animation" class="opening-overlay">
+    <!-- 地图背景层 -->
+    <div class="map-background"></div>
+    
+    <!-- 男生小人 (从中国出发) -->
+    <div class="character boy" id="boy-character">
+      <div class="character-icon">
+        <div class="character-head"></div>
+        <div class="character-body"></div>
+      </div>
+    </div>
+    
+    <!-- 女生小人 (从台湾出发) -->
+    <div class="character girl" id="girl-character">
+      <div class="character-icon">
+        <div class="character-head"></div>
+        <div class="character-body"></div>
+      </div>
+    </div>
+    
+    <!-- 爱心动画 -->
+    <div class="heart-animation" id="heart-animation">
+      <svg class="heart-svg" viewBox="0 0 32 29.6">
+        <path d="M23.6,0c-3.4,0-6.3,2.7-7.6,5.6C14.7,2.7,11.8,0,8.4,0C3.8,0,0,3.8,0,8.4c0,9.4,9.5,11.9,16,21.2c6.1-9.3,16-12.1,16-21.2C32,3.8,28.2,0,23.6,0z"/>
+      </svg>
+    </div>
+  </div>
+
   <!-- Fixed Navigation -->
   <nav class="navbar" id="navbar">
     <div class="nav-container">

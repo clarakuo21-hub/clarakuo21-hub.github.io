@@ -34,6 +34,273 @@
   --radius: 16px;
 }
 
+/* ====================================
+   Opening Animation Styles
+   ==================================== */
+
+/* 開場動畫覆蓋層 */
+.opening-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 10000;
+  overflow: hidden;
+  animation: fadeOut 1s ease-out 6.5s forwards;
+  pointer-events: none;
+}
+
+/* 地圖背景 - 使用漸層和圓點創造世界地圖效果 */
+/* 💡 替換提示：如果您有地圖圖片，請將下面的background改為：
+   background: url('asset/map-bg.jpg') center/cover no-repeat;
+*/
+.map-background {
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(212, 165, 165, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 40%, rgba(201, 169, 98, 0.1) 0%, transparent 50%),
+    linear-gradient(135deg, #FDF8F5 0%, #F5EBE6 100%);
+  position: relative;
+}
+
+/* 裝飾性地圖網格效果 */
+.map-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    repeating-linear-gradient(0deg, rgba(201, 169, 98, 0.08) 0px, transparent 1px, transparent 50px, rgba(201, 169, 98, 0.08) 51px),
+    repeating-linear-gradient(90deg, rgba(201, 169, 98, 0.08) 0px, transparent 1px, transparent 50px, rgba(201, 169, 98, 0.08) 51px);
+  opacity: 0.5;
+}
+
+/* 小人物角色基礎樣式 */
+.character {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  z-index: 10;
+}
+
+/* 男生初始位置 - 中國 🗺️ 調整位置：修改 left/top 值 */
+.character.boy {
+  left: 70%; /* 中國大致位置（畫面右側偏上） */
+  top: 35%;
+  animation: moveBoyToGermany 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+}
+
+/* 女生初始位置 - 台灣 🗺️ 調整位置：修改 left/top 值 */
+.character.girl {
+  left: 75%; /* 台灣位置（中國右下方） */
+  top: 45%;
+  animation: moveGirlToGermany 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+}
+
+/* 小人物圖示 */
+.character-icon {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+/* 頭部 */
+.character-head {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 身體 */
+.character-body {
+  width: 24px;
+  height: 26px;
+  border-radius: 50% 50% 60% 60%;
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 男生顏色 */
+.character.boy .character-head {
+  background: linear-gradient(135deg, #4A9FDB 0%, #2E7DB5 100%);
+}
+
+.character.boy .character-body {
+  background: linear-gradient(135deg, #5AB0EC 0%, #3A8EC6 100%);
+}
+
+/* 女生顏色 */
+.character.girl .character-head {
+  background: linear-gradient(135deg, #E89AC7 0%, #D67BA8 100%);
+}
+
+.character.girl .character-body {
+  background: linear-gradient(135deg, #F5AAD6 0%, #E68BB9 100%);
+}
+
+/* 男生移動到德國的弧線動畫 🗺️ 調整德國位置：修改關鍵幀中的位置值 */
+@keyframes moveBoyToGermany {
+  0% {
+    left: 70%;
+    top: 35%;
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    left: 48%; /* 弧線中間點 */
+    top: 25%; /* 向上的弧線 */
+    transform: scale(1.2) translateY(-30px);
+  }
+  100% {
+    left: 35%; /* 德國位置（畫面中央偏左上） */
+    top: 30%;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 女生移動到德國的弧線動畫 🗺️ 調整德國位置：修改關鍵幀中的位置值 */
+@keyframes moveGirlToGermany {
+  0% {
+    left: 75%;
+    top: 45%;
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    left: 52%; /* 弧線中間點 */
+    top: 32%; /* 向上的弧線 */
+    transform: scale(1.2) translateY(-25px);
+  }
+  100% {
+    left: 35%; /* 德國位置（與男生相同） */
+    top: 30%;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 愛心動畫容器 */
+.heart-animation {
+  position: absolute;
+  left: 35%; /* 🗺️ 德國位置 - 與角色終點相同 */
+  top: 30%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: showHeart 1.5s ease-out 4s forwards;
+  z-index: 20;
+}
+
+.heart-svg {
+  width: 80px;
+  height: 80px;
+  fill: #E74C3C;
+  filter: drop-shadow(0 4px 12px rgba(231, 76, 60, 0.4));
+}
+
+/* 愛心出現動畫 */
+@keyframes showHeart {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  85% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* 整個開場淡出動畫 */
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* 手機優化 */
+@media (max-width: 768px) {
+  .character {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .character-head {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .character-body {
+    width: 18px;
+    height: 20px;
+    top: 20px;
+  }
+  
+  .heart-svg {
+    width: 60px;
+    height: 60px;
+  }
+  
+  /* 調整移動路徑適應小螢幕 */
+  @keyframes moveBoyToGermany {
+    0% {
+      left: 65%;
+      top: 35%;
+    }
+    50% {
+      left: 48%;
+      top: 28%;
+      transform: scale(1.15) translateY(-20px);
+    }
+    100% {
+      left: 40%;
+      top: 32%;
+    }
+  }
+  
+  @keyframes moveGirlToGermany {
+    0% {
+      left: 70%;
+      top: 42%;
+    }
+    50% {
+      left: 52%;
+      top: 35%;
+      transform: scale(1.15) translateY(-15px);
+    }
+    100% {
+      left: 40%;
+      top: 32%;
+    }
+  }
+  
+  .heart-animation {
+    left: 40%;
+    top: 32%;
+  }
+}
+
 /* Reset & Base */
 *, *::before, *::after {
   box-sizing: border-box;
