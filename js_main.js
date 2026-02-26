@@ -195,7 +195,7 @@ function initScrollAnimations() {
   
   // Observe elements
   const animatedElements = document.querySelectorAll(
-    '.section-header, .about-content, .countdown-wrapper, .info-card, .timeline-item, .gallery-item, .rsvp-card'
+    '.section-header, .about-content, .countdown-wrapper, .info-card, .timeline-item, .journey-story-card, .rsvp-card'
   );
   
   animatedElements.forEach(el => {
@@ -299,7 +299,7 @@ function addStaggeredDelay(selector, baseDelay = 0.1) {
 document.addEventListener('DOMContentLoaded', () => {
   addStaggeredDelay('.info-card', 0.1);
   addStaggeredDelay('.timeline-item', 0.15);
-  addStaggeredDelay('.gallery-item', 0.08);
+  addStaggeredDelay('.journey-story-card', 0.2);
 });
 
 // ====================================
