@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSmoothScroll();
   initScrollAnimations();
   initRSVPForm();
+  initFallingPetals();
 });
 
 // ====================================
@@ -300,3 +301,113 @@ document.addEventListener('DOMContentLoaded', () => {
   addStaggeredDelay('.timeline-item', 0.15);
   addStaggeredDelay('.gallery-item', 0.08);
 });
+
+// ====================================
+// Falling Flower Petals Animation
+// ====================================
+function initFallingPetals() {
+  const container = document.getElementById('petals-container');
+  if (!container) return;
+
+  // Petal SVG templates — cherry blossoms & small roses
+  const petalShapes = [
+    // Cherry blossom petal
+    `<svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 2C15 2 8 8 8 15C8 19 11 22 15 22C19 22 22 19 22 15C22 8 15 2 15 2Z" fill="FILL" opacity="0.8"/>
+    </svg>`,
+    // Round petal
+    `<svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="14" cy="14" rx="10" ry="12" fill="FILL" opacity="0.75" transform="rotate(-15 14 14)"/>
+    </svg>`,
+    // Heart-shaped small petal
+    `<svg viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 24C13 24 2 16 2 9C2 5 5 2 9 2C11 2 13 4 13 4C13 4 15 2 17 2C21 2 24 5 24 9C24 16 13 24 13 24Z" fill="FILL" opacity="0.7"/>
+    </svg>`,
+    // Tiny flower
+    `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="3" fill="#E5D4A1" opacity="0.9"/>
+      <ellipse cx="12" cy="5" rx="3.5" ry="5" fill="FILL" opacity="0.7"/>
+      <ellipse cx="12" cy="19" rx="3.5" ry="5" fill="FILL" opacity="0.7"/>
+      <ellipse cx="5" cy="12" rx="5" ry="3.5" fill="FILL" opacity="0.7"/>
+      <ellipse cx="19" cy="12" rx="5" ry="3.5" fill="FILL" opacity="0.7"/>
+    </svg>`,
+    // Slim petal
+    `<svg viewBox="0 0 20 32" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 0C10 0 0 10 0 20C0 26 4 32 10 32C16 32 20 26 20 20C20 10 10 0 10 0Z" fill="FILL" opacity="0.7"/>
+    </svg>`
+  ];
+
+  // Romantic color palette for petals
+  const petalColors = [
+    '#F5C6CB',  // soft pink
+    '#E8B4C0',  // rose pink
+    '#F0D4DB',  // blush
+    '#D4A5A5',  // dusty rose
+    '#F7DFE4',  // pale pink
+    '#FADCE5',  // light cherry
+    '#E8C4C4',  // warm rose
+    '#F2E0E0',  // cream rose
+    '#FFE4E9',  // baby pink
+    '#EDD5C8',  // peach
+  ];
+
+  const MAX_PETALS = 35; // Limit total petals on screen
+  let activePetals = 0;
+
+  function createPetal() {
+    if (activePetals >= MAX_PETALS) return;
+
+    const petal = document.createElement('div');
+    petal.className = 'petal';
+
+    // Random petal shape & color
+    const shape = petalShapes[Math.floor(Math.random() * petalShapes.length)];
+    const color = petalColors[Math.floor(Math.random() * petalColors.length)];
+    petal.innerHTML = shape.replace(/FILL/g, color);
+
+    // Random size 14-28px
+    const size = 14 + Math.random() * 14;
+    petal.style.width = size + 'px';
+    petal.style.height = size + 'px';
+
+    // Random horizontal position
+    petal.style.left = Math.random() * 100 + 'vw';
+
+    // Random fall duration 6-14s
+    const duration = 6 + Math.random() * 8;
+    petal.style.animationDuration = duration + 's';
+
+    // Random delay 0-3s
+    const delay = Math.random() * 3;
+    petal.style.animationDelay = delay + 's';
+
+    // Random initial rotation
+    petal.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+    container.appendChild(petal);
+    activePetals++;
+
+    // Remove petal after animation
+    setTimeout(() => {
+      if (petal.parentNode) {
+        petal.parentNode.removeChild(petal);
+        activePetals--;
+      }
+    }, (duration + delay) * 1000 + 500);
+  }
+
+  // Wait for opening animation to finish, then start petals
+  setTimeout(() => {
+    // Create initial burst of petals
+    for (let i = 0; i < 10; i++) {
+      setTimeout(createPetal, i * 300);
+    }
+
+    // Continuously create petals
+    setInterval(() => {
+      if (Math.random() < 0.7) { // 70% chance each interval
+        createPetal();
+      }
+    }, 800);
+  }, 7000); // Start after opening animation
+}

@@ -17,11 +17,12 @@
   --text-light: #7A6B6B;
   --text-muted: #9A8B8B;
   
-  /* Typography */
-  --ff-heading: "Playfair Display", 'ZCOOL KuaiLe', cursive, Georgia, serif;
-  --ff-heading-zh: 'ZCOOL KuaiLe', cursive, "Playfair Display", Georgia, serif;
-  --ff-body: "Inter", 'ZCOOL KuaiLe', cursive, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --ff-body-zh: 'ZCOOL KuaiLe', cursive, "Inter", -apple-system, sans-serif;
+  /* Typography - Romantic Fonts */
+  --ff-script: 'Great Vibes', cursive;
+  --ff-heading: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  --ff-heading-zh: 'LXGW WenKai', 'ZCOOL KuaiLe', cursive, serif;
+  --ff-body: 'Cormorant Garamond', 'Inter', Georgia, serif;
+  --ff-body-zh: 'LXGW WenKai', 'ZCOOL KuaiLe', cursive, sans-serif;
   
   /* Spacing */
   --section-padding: 100px;
@@ -30,6 +31,7 @@
   /* Effects */
   --shadow-soft: 0 4px 20px rgba(180, 137, 138, 0.15);
   --shadow-medium: 0 8px 40px rgba(180, 137, 138, 0.2);
+  --shadow-dreamy: 0 8px 32px rgba(212, 165, 165, 0.25), 0 0 80px rgba(232, 196, 196, 0.1);
   --transition: all 0.3s ease;
   --radius: 16px;
 }
@@ -655,11 +657,11 @@ a {
 }
 
 .hero-subtitle {
-  font-family: var(--ff-body);
-  font-size: 1rem;
+  font-family: var(--ff-script);
+  font-size: 1.4rem;
   font-weight: 400;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-transform: none;
   color: var(--gold-dark);
   margin-bottom: 20px;
 }
@@ -700,8 +702,8 @@ a {
 }
 
 .hero-date {
-  font-family: var(--ff-heading);
-  font-size: 1.5rem;
+  font-family: var(--ff-script);
+  font-size: 1.8rem;
   color: var(--text-dark);
   margin-bottom: 8px;
 }
@@ -807,11 +809,11 @@ a {
 }
 
 .section-subtitle {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   color: var(--gold-dark);
   letter-spacing: 0.15em;
-  text-transform: uppercase;
-  font-family: var(--ff-body);
+  text-transform: none;
+  font-family: var(--ff-script);
 }
 
 /* ====================================
@@ -1445,8 +1447,8 @@ a {
 }
 
 .footer-names {
-  font-family: var(--ff-heading-zh);
-  font-size: 2rem;
+  font-family: var(--ff-script);
+  font-size: 2.5rem;
   color: var(--white);
   margin-bottom: 10px;
 }
@@ -1658,5 +1660,216 @@ a {
   
   .section-title {
     font-size: 1.8rem;
+  }
+}
+
+/* ====================================
+   Falling Flower Petals
+   ==================================== */
+.petals-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.petal {
+  position: absolute;
+  top: -60px;
+  opacity: 0;
+  pointer-events: none;
+  animation: petalFall linear forwards;
+  filter: blur(0.5px);
+}
+
+.petal svg {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes petalFall {
+  0% {
+    opacity: 0;
+    transform: translateX(0) translateY(0) rotate(0deg) scale(0.8);
+  }
+  10% {
+    opacity: 0.9;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(var(--petal-drift, 80px)) translateY(110vh) rotate(var(--petal-rotation, 720deg)) scale(0.4);
+  }
+}
+
+/* Petal sway variations */
+.petal:nth-child(odd) {
+  --petal-drift: -60px;
+  --petal-rotation: -540deg;
+}
+
+.petal:nth-child(even) {
+  --petal-drift: 90px;
+  --petal-rotation: 660deg;
+}
+
+.petal:nth-child(3n) {
+  --petal-drift: -120px;
+  --petal-rotation: 480deg;
+}
+
+.petal:nth-child(5n) {
+  --petal-drift: 150px;
+  --petal-rotation: -720deg;
+}
+
+/* ====================================
+   Dreamy Glow Effects
+   ==================================== */
+
+/* Soft glow on hero section */
+.hero::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(212,165,165,0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: glowPulse 6s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+}
+
+/* Sparkle effect on section headers */
+.section-header::after {
+  content: '✦';
+  display: block;
+  font-size: 1rem;
+  color: var(--gold-light);
+  margin-top: 15px;
+  letter-spacing: 1.5em;
+  animation: sparkle 3s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Romantic divider ornament */
+.section-header .section-subtitle::before,
+.section-header .section-subtitle::after {
+  content: '~';
+  margin: 0 10px;
+  color: var(--dusty-rose-light);
+  font-weight: 300;
+}
+
+/* Dreamy card hover glow */
+.info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-dreamy);
+}
+
+/* Gallery dreamy hover */
+.gallery-item:hover img {
+  transform: scale(1.08);
+  filter: brightness(1.05) contrast(0.95);
+}
+
+/* Soft romantic border for RSVP card */
+.rsvp-card {
+  position: relative;
+  border: 1px solid rgba(212, 165, 165, 0.3);
+}
+
+.rsvp-card::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 1px solid rgba(201, 169, 98, 0.2);
+  border-radius: calc(var(--radius) + 3px);
+  pointer-events: none;
+}
+
+/* Hero arch image dreamy glow */
+.hero-arch-image {
+  box-shadow: 0 25px 80px rgba(180, 137, 138, 0.35), 0 0 60px rgba(212, 165, 165, 0.15);
+}
+
+/* Footer romantic sparkle */
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-light), var(--dusty-rose-light), var(--gold-light), transparent);
+}
+
+.footer {
+  position: relative;
+}
+
+/* Soft text shadow for headings */
+.hero-names {
+  text-shadow: 0 2px 20px rgba(212, 165, 165, 0.2);
+}
+
+/* Countdown dreamy style */
+.countdown-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.08) 0%, transparent 60%);
+  animation: countdownGlow 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes countdownGlow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(10%, -5%) scale(1.1); }
+  66% { transform: translate(-5%, 10%) scale(0.95); }
+}
+
+/* About signature romantic style */
+.about-signature span {
+  font-family: var(--ff-script);
+  font-size: 1.8rem;
+  font-style: normal;
+  color: var(--dusty-rose-dark);
+}
+
+/* Mobile petal adjustments */
+@media (max-width: 768px) {
+  .petals-container .petal {
+    transform: scale(0.7);
+  }
+  
+  .hero::after {
+    width: 300px;
+    height: 300px;
   }
 }
