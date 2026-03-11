@@ -327,7 +327,7 @@ function initGuestbook() {
       await loadEntries();
     } catch (error) {
       console.error(error);
-      alert('目前無法送出到伺服器，請稍後再試。');
+      alert(`目前無法送出到伺服器: ${error.message || '未知錯誤'}`);
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
