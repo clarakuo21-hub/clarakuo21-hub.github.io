@@ -257,7 +257,7 @@ function initGuestbook() {
     lastRenderedSignature = nextSignature;
 
     if (!entries.length) {
-      list.innerHTML = '<p class="blessings-empty">第一則祝福，就由你寫下吧。</p>';
+      list.innerHTML = '<p class="blessings-empty">第一则祝福，就由你写下吧。</p>';
       return;
     }
 
@@ -315,7 +315,7 @@ function initGuestbook() {
     const message = messageInput.value.trim();
 
     if (!name || !message) {
-      alert('請先填寫名字與祝福內容');
+      alert('请先填写名字与祝福内容');
       return;
     }
 
@@ -337,7 +337,7 @@ function initGuestbook() {
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(payload.error || '送出失敗');
+        throw new Error(payload.error || '送出失败');
       }
 
       // Optimistic update: show the newly created blessing immediately.
@@ -352,7 +352,7 @@ function initGuestbook() {
       loadEntries({ allowFallback: false });
     } catch (error) {
       console.error(error);
-      alert(`目前無法送出到伺服器: ${error.message || '未知錯誤'}`);
+      alert(`目前无法送出到服务器: ${error.message || '未知错误'}`);
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
@@ -440,10 +440,10 @@ function initRSVPForm() {
           <div style="text-align: center; padding: 40px 20px;">
             <div style="font-size: 4rem; margin-bottom: 20px;">💕</div>
             <h3 style="font-family: var(--ff-heading); font-size: 1.5rem; color: var(--text-dark); margin-bottom: 15px;">
-              感謝您的回覆！
+              感谢您的回复！
             </h3>
             <p style="color: var(--text-light);">
-              我們已收到您的 RSVP，期待與您共同慶祝！
+              我们已收到您的 RSVP，期待与您共同庆祝！
             </p>
           </div>
         `;
@@ -453,7 +453,7 @@ function initRSVPForm() {
       }
     } catch (err) {
       console.error(err);
-      alert('抱歉，發生錯誤。您也可以直接發送電子郵件給我們。');
+      alert('抱歉，发生错误。您也可以直接发送电子邮件给我们。');
       submitBtn.disabled = false;
       submitBtn.textContent = '送出 RSVP';
     }
