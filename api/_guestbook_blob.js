@@ -110,13 +110,31 @@ export async function writeEntries(entries) {
 
   try {
     await put(GUESTBOOK_PATH, text, {
-      access: 'private',
+      access: 'public',
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: 'text/plain; charset=utf-8',
       cacheControlMaxAge: 0
     });
   } catch (error) {
+    const message = (error && error.message ? error.message : '').toLowerCase();
+
+    // Some stores are configured as private-only; retry with private access.
+    if (message.includes('private store')) {
+      try {
+        await put(GUESTBOOK_PATH, text, {
+          access: 'private',
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          contentType: 'text/plain; charset=utf-8',
+          cacheControlMaxAge: 0
+        });
+        return;
+      } catch (retryError) {
+        withBlobErrorHint(retryError);
+      }
+    }
+
     withBlobErrorHint(error);
   }
 }
