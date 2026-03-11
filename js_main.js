@@ -229,7 +229,10 @@ function initGuestbook() {
 
   const GUESTBOOK_API = '/api/guestbook';
   const GUESTBOOK_TXT_API = '/api/guestbook.txt';
+  const AUTO_REFRESH_MS = 8000;
   let entries = [];
+  let isLoadingEntries = false;
+  let lastRenderedSignature = '';
 
   const escapeHtml = (value) => value
     .replace(/&/g, '&amp;')
@@ -249,6 +252,10 @@ function initGuestbook() {
   };
 
   const renderEntries = () => {
+    const nextSignature = entries.map((entry) => `${entry.createdAt}|${entry.name}|${entry.message}`).join('||');
+    if (nextSignature === lastRenderedSignature) return;
+    lastRenderedSignature = nextSignature;
+
     if (!entries.length) {
       list.innerHTML = '<p class="blessings-empty">第一則祝福，就由你寫下吧。</p>';
       return;
@@ -265,27 +272,36 @@ function initGuestbook() {
     `).join('');
   };
 
-  const loadEntries = async () => {
-    try {
-      const response = await fetch(GUESTBOOK_API, { method: 'GET' });
-      if (!response.ok) throw new Error(`API failed with ${response.status}`);
-      const payload = await response.json();
-      entries = Array.isArray(payload.entries) ? payload.entries : [];
-      renderEntries();
-      return;
-    } catch (error) {
-      console.error('Guestbook API unavailable, fallback to static txt:', error);
-    }
+  const loadEntries = async ({ allowFallback = true } = {}) => {
+    if (isLoadingEntries) return;
+    isLoadingEntries = true;
 
-    // Fallback for local preview when API is not deployed.
     try {
-      const response = await fetch('guestbook.txt');
-      const text = response.ok ? await response.text() : '';
-      entries = parseGuestbookTxt(text);
-    } catch {
-      entries = [];
+      try {
+        const response = await fetch(GUESTBOOK_API, { method: 'GET' });
+        if (!response.ok) throw new Error(`API failed with ${response.status}`);
+        const payload = await response.json();
+        entries = Array.isArray(payload.entries) ? payload.entries : [];
+        renderEntries();
+        return;
+      } catch (error) {
+        console.error('Guestbook API unavailable, fallback to static txt:', error);
+      }
+
+      if (!allowFallback) return;
+
+      // Fallback for local preview when API is not deployed.
+      try {
+        const response = await fetch('guestbook.txt');
+        const text = response.ok ? await response.text() : '';
+        entries = parseGuestbookTxt(text);
+      } catch {
+        entries = [];
+      }
+      renderEntries();
+    } finally {
+      isLoadingEntries = false;
     }
-    renderEntries();
   };
 
   form.addEventListener('submit', async (event) => {
@@ -324,7 +340,7 @@ function initGuestbook() {
       }
 
       form.reset();
-      await loadEntries();
+      await loadEntries({ allowFallback: false });
     } catch (error) {
       console.error(error);
       alert(`目前無法送出到伺服器: ${error.message || '未知錯誤'}`);
@@ -341,6 +357,16 @@ function initGuestbook() {
       window.location.href = GUESTBOOK_TXT_API;
     });
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      loadEntries({ allowFallback: false });
+    }
+  });
+
+  setInterval(() => {
+    loadEntries({ allowFallback: false });
+  }, AUTO_REFRESH_MS);
 
   loadEntries();
 }
