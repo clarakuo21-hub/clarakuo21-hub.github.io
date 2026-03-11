@@ -17,6 +17,22 @@ export function ensureBlobConfigured() {
   }
 }
 
+function withBlobErrorHint(error) {
+  const message = (error && error.message ? error.message : '').toLowerCase();
+
+  if (message.includes('store does not exist')) {
+    throw new Error(
+      'Blob store not found. Reconnect Blob storage in this Vercel project and rotate BLOB_READ_WRITE_TOKEN, then redeploy.'
+    );
+  }
+
+  if (message.includes('public access') && message.includes('private store')) {
+    throw new Error('Blob store is private. Guestbook API must write with private access mode.');
+  }
+
+  throw error;
+}
+
 function parseGuestbookTxt(text) {
   if (!text || typeof text !== 'string') return [];
 
@@ -58,10 +74,15 @@ export function buildGuestbookTxt(entries) {
 }
 
 async function getGuestbookBlob() {
-  const response = await list({
-    prefix: GUESTBOOK_PATH,
-    limit: 100
-  });
+  let response;
+  try {
+    response = await list({
+      prefix: GUESTBOOK_PATH,
+      limit: 100
+    });
+  } catch (error) {
+    withBlobErrorHint(error);
+  }
 
   const candidates = (response.blobs || [])
     .filter((blob) => blob.pathname === GUESTBOOK_PATH)
@@ -74,7 +95,8 @@ export async function readEntries() {
   const blob = await getGuestbookBlob();
   if (!blob) return [];
 
-  const response = await fetch(blob.url, { cache: 'no-store' });
+  const sourceUrl = blob.downloadUrl || blob.url;
+  const response = await fetch(sourceUrl, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`Unable to read guestbook blob: ${response.status}`);
   }
@@ -86,11 +108,15 @@ export async function readEntries() {
 export async function writeEntries(entries) {
   const text = buildGuestbookTxt(entries);
 
-  await put(GUESTBOOK_PATH, text, {
-    access: 'public',
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: 'text/plain; charset=utf-8',
-    cacheControlMaxAge: 0
-  });
+  try {
+    await put(GUESTBOOK_PATH, text, {
+      access: 'private',
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: 'text/plain; charset=utf-8',
+      cacheControlMaxAge: 0
+    });
+  } catch (error) {
+    withBlobErrorHint(error);
+  }
 }
