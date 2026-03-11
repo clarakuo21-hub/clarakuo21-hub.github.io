@@ -334,13 +334,22 @@ function initGuestbook() {
         body: JSON.stringify({ name, message })
       });
 
+      const payload = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
         throw new Error(payload.error || '送出失敗');
       }
 
+      // Optimistic update: show the newly created blessing immediately.
+      if (payload.entry) {
+        entries = [payload.entry, ...entries]
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 200);
+        renderEntries();
+      }
+
       form.reset();
-      await loadEntries({ allowFallback: false });
+      loadEntries({ allowFallback: false });
     } catch (error) {
       console.error(error);
       alert(`目前無法送出到伺服器: ${error.message || '未知錯誤'}`);

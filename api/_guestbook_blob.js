@@ -1,6 +1,10 @@
 import { list, put } from '@vercel/blob';
 
 const GUESTBOOK_PATH = 'guestbook.txt';
+const ENTRY_CACHE_TTL_MS = 5000;
+
+let entriesCache = null;
+let entriesCacheAt = 0;
 
 function getBlobOptions() {
   const options = {};
@@ -84,6 +88,17 @@ export function buildGuestbookTxt(entries) {
   return lines.join('\n').trim() + '\n';
 }
 
+function setEntriesCache(entries) {
+  entriesCache = Array.isArray(entries) ? entries.slice() : [];
+  entriesCacheAt = Date.now();
+}
+
+function getEntriesCache() {
+  if (!Array.isArray(entriesCache)) return null;
+  if (Date.now() - entriesCacheAt > ENTRY_CACHE_TTL_MS) return null;
+  return entriesCache.slice();
+}
+
 async function getGuestbookBlob() {
   const blobOptions = getBlobOptions();
   let response;
@@ -104,9 +119,17 @@ async function getGuestbookBlob() {
   return candidates[0] || null;
 }
 
-export async function readEntries() {
+export async function readEntries({ forceFresh = false } = {}) {
+  if (!forceFresh) {
+    const cached = getEntriesCache();
+    if (cached) return cached;
+  }
+
   const blob = await getGuestbookBlob();
-  if (!blob) return [];
+  if (!blob) {
+    setEntriesCache([]);
+    return [];
+  }
 
   const sourceUrl = blob.downloadUrl || blob.url;
   const response = await fetch(sourceUrl, { cache: 'no-store' });
@@ -115,7 +138,9 @@ export async function readEntries() {
   }
 
   const text = await response.text();
-  return parseGuestbookTxt(text);
+  const parsed = parseGuestbookTxt(text);
+  setEntriesCache(parsed);
+  return parsed;
 }
 
 export async function writeEntries(entries) {
@@ -131,6 +156,7 @@ export async function writeEntries(entries) {
       cacheControlMaxAge: 0,
       ...blobOptions
     });
+    setEntriesCache(entries);
   } catch (error) {
     const message = (error && error.message ? error.message : '').toLowerCase();
 
@@ -145,6 +171,7 @@ export async function writeEntries(entries) {
           cacheControlMaxAge: 0,
           ...blobOptions
         });
+        setEntriesCache(entries);
         return;
       } catch (retryError) {
         withBlobErrorHint(retryError);
