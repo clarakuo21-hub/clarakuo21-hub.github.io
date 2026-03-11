@@ -227,9 +227,9 @@ function initGuestbook() {
 
   if (!form || !list || !downloadBtn) return;
 
-  const STORAGE_KEY = 'weddingGuestbookEntries';
-  const MAX_ENTRIES = 100;
-  let seedEntries = [];
+  const GUESTBOOK_API = '/api/guestbook';
+  const GUESTBOOK_TXT_API = '/api/guestbook.txt';
+  let entries = [];
 
   const escapeHtml = (value) => value
     .replace(/&/g, '&amp;')
@@ -248,31 +248,7 @@ function initGuestbook() {
     });
   };
 
-  const getLocalEntries = () => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.filter(entry => entry && entry.name && entry.message);
-    } catch (error) {
-      console.error('Failed to parse guestbook storage:', error);
-      return [];
-    }
-  };
-
-  const saveLocalEntries = (entries) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, MAX_ENTRIES)));
-  };
-
-  const getMergedEntries = () => {
-    return [...getLocalEntries(), ...seedEntries]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  };
-
   const renderEntries = () => {
-    const entries = getMergedEntries();
-
     if (!entries.length) {
       list.innerHTML = '<p class="blessings-empty">第一則祝福，就由你寫下吧。</p>';
       return;
@@ -289,20 +265,30 @@ function initGuestbook() {
     `).join('');
   };
 
-  const buildTxtContent = () => {
-    const lines = ['# Wedding Guestbook', '# Li Bo & Kuo YaHsien', ''];
-    const entries = getMergedEntries();
+  const loadEntries = async () => {
+    try {
+      const response = await fetch(GUESTBOOK_API, { method: 'GET' });
+      if (!response.ok) throw new Error(`API failed with ${response.status}`);
+      const payload = await response.json();
+      entries = Array.isArray(payload.entries) ? payload.entries : [];
+      renderEntries();
+      return;
+    } catch (error) {
+      console.error('Guestbook API unavailable, fallback to static txt:', error);
+    }
 
-    entries.forEach((entry, index) => {
-      lines.push(`${index + 1}. ${entry.name} (${formatDate(entry.createdAt)})`);
-      lines.push(entry.message);
-      lines.push('');
-    });
-
-    return lines.join('\n').trim() + '\n';
+    // Fallback for local preview when API is not deployed.
+    try {
+      const response = await fetch('guestbook.txt');
+      const text = response.ok ? await response.text() : '';
+      entries = parseGuestbookTxt(text);
+    } catch {
+      entries = [];
+    }
+    renderEntries();
   };
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     const nameInput = document.getElementById('guest-name');
@@ -317,41 +303,44 @@ function initGuestbook() {
       return;
     }
 
-    const localEntries = getLocalEntries();
-    localEntries.unshift({
-      name,
-      message,
-      createdAt: new Date().toISOString()
-    });
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = '送出中...';
+    }
 
-    saveLocalEntries(localEntries);
-    form.reset();
-    renderEntries();
+    try {
+      const response = await fetch(GUESTBOOK_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, message })
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || '送出失敗');
+      }
+
+      form.reset();
+      await loadEntries();
+    } catch (error) {
+      console.error(error);
+      alert('目前無法送出到伺服器，請稍後再試。');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '送出祝福';
+      }
+    }
   });
 
   downloadBtn.addEventListener('click', () => {
-    const content = buildTxtContent();
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'guestbook.txt';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    window.location.href = GUESTBOOK_TXT_API;
   });
 
-  // Preload optional initial blessings from guestbook.txt if it exists.
-  fetch('guestbook.txt')
-    .then((response) => (response.ok ? response.text() : ''))
-    .then((text) => {
-      seedEntries = parseGuestbookTxt(text);
-      renderEntries();
-    })
-    .catch(() => {
-      renderEntries();
-    });
+  loadEntries();
 }
 
 function parseGuestbookTxt(text) {

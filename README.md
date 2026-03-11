@@ -30,3 +30,35 @@ If you want, I can:
 - Generate a simple shareable image for social media.
 
 Enjoy — congratulations!
+
+## Centralized Guestbook With Vercel Function
+
+This project now includes:
+- `api/guestbook.js`: GET/POST guestbook entries (shared for all guests)
+- `api/guestbook.txt.js`: Download all blessings as a single `guestbook.txt`
+- `api/_guestbook_blob.js`: Blob helper for reading/writing the shared text file
+
+### 1. Deploy to Vercel
+1. Import this GitHub repository into Vercel.
+2. Keep the default framework preset as `Other`.
+3. Deploy once.
+
+### 2. Add Vercel Blob
+1. In Vercel dashboard, open your project.
+2. Go to `Storage` → create/connect `Blob`.
+3. Attach it to this project.
+
+After attaching, Vercel will automatically provide environment variable:
+- `BLOB_READ_WRITE_TOKEN`
+
+### 3. Redeploy
+Redeploy the project so Functions can read the Blob variable.
+
+### 4. Verify Endpoints
+- `GET /api/guestbook` should return `{ "entries": [...] }`
+- `POST /api/guestbook` with JSON `{ "name": "...", "message": "..." }` should append a blessing
+- `GET /api/guestbook.txt` should download the shared txt file
+
+### Notes
+- Vercel Functions cannot persist writes to repository files directly.
+- The "single file" behavior is implemented by storing and overwriting one shared Blob file (`guestbook.txt`).
