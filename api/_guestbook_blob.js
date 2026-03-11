@@ -2,6 +2,17 @@ import { list, put } from '@vercel/blob';
 
 const GUESTBOOK_PATH = 'guestbook.txt';
 
+function getBlobOptions() {
+  const options = {};
+
+  // Optional: force operations to a specific connected Blob store.
+  if (process.env.BLOB_STORE_ID) {
+    options.storeId = process.env.BLOB_STORE_ID;
+  }
+
+  return options;
+}
+
 function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
@@ -74,11 +85,13 @@ export function buildGuestbookTxt(entries) {
 }
 
 async function getGuestbookBlob() {
+  const blobOptions = getBlobOptions();
   let response;
   try {
     response = await list({
       prefix: GUESTBOOK_PATH,
-      limit: 100
+      limit: 100,
+      ...blobOptions
     });
   } catch (error) {
     withBlobErrorHint(error);
@@ -107,6 +120,7 @@ export async function readEntries() {
 
 export async function writeEntries(entries) {
   const text = buildGuestbookTxt(entries);
+  const blobOptions = getBlobOptions();
 
   try {
     await put(GUESTBOOK_PATH, text, {
@@ -114,7 +128,8 @@ export async function writeEntries(entries) {
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: 'text/plain; charset=utf-8',
-      cacheControlMaxAge: 0
+      cacheControlMaxAge: 0,
+      ...blobOptions
     });
   } catch (error) {
     const message = (error && error.message ? error.message : '').toLowerCase();
@@ -127,7 +142,8 @@ export async function writeEntries(entries) {
           addRandomSuffix: false,
           allowOverwrite: true,
           contentType: 'text/plain; charset=utf-8',
-          cacheControlMaxAge: 0
+          cacheControlMaxAge: 0,
+          ...blobOptions
         });
         return;
       } catch (retryError) {
