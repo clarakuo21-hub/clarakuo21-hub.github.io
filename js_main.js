@@ -225,7 +225,7 @@ function initGuestbook() {
   const list = document.getElementById('blessings-list');
   const downloadBtn = document.getElementById('download-guestbook');
 
-  if (!form || !list || !downloadBtn) return;
+  if (!form || !list) return;
 
   const GUESTBOOK_API = '/api/guestbook';
   const GUESTBOOK_TXT_API = '/api/guestbook.txt';
@@ -336,9 +336,11 @@ function initGuestbook() {
     }
   });
 
-  downloadBtn.addEventListener('click', () => {
-    window.location.href = GUESTBOOK_TXT_API;
-  });
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      window.location.href = GUESTBOOK_TXT_API;
+    });
+  }
 
   loadEntries();
 }
