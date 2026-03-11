@@ -376,54 +376,45 @@
       </div>
     </section>
 
-    <!-- RSVP Section -->
-    <section id="rsvp" class="section rsvp-section">
+    <!-- Guestbook / RSVP Section -->
+    <section id="rsvp" class="section guestbook-section">
       <div class="container">
         <div class="section-header">
-          <h2 class="section-title">RSVP</h2>
-          <p class="section-subtitle">請讓我們知道您是否能參加</p>
+          <h2 class="section-title">賓客留言板</h2>
+          <p class="section-subtitle">Leave Your Blessings</p>
         </div>
-        <div class="rsvp-card">
-          <p class="rsvp-deadline">請於 2026年5月1日 前回覆</p>
-          <form id="rsvp-form" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST">
-            <div class="form-group">
-              <label for="name">您的姓名</label>
-              <input type="text" id="name" name="name" required placeholder="請輸入您的姓名">
-            </div>
 
-            <div class="form-group">
-              <label for="email">電子郵件</label>
-              <input type="email" id="email" name="email" required placeholder="請輸入您的電子郵件">
-            </div>
-
-            <div class="form-row">
+        <div class="guestbook-grid">
+          <div class="guestbook-panel">
+            <h3 class="guestbook-form-title">寫下你的祝福</h3>
+            <form id="guestbook-form" class="guestbook-form" novalidate>
               <div class="form-group">
-                <label for="attending">是否出席？</label>
-                <select id="attending" name="attending" required>
-                  <option value="">請選擇</option>
-                  <option value="yes">是的，我會參加</option>
-                  <option value="no">抱歉，無法參加</option>
-                </select>
+                <label for="guest-name">您的名字</label>
+                <input id="guest-name" name="guestName" type="text" maxlength="24" placeholder="例如：小美" required>
               </div>
-
               <div class="form-group">
-                <label for="guests">出席人數</label>
-                <input type="number" id="guests" name="guests" min="1" max="10" value="1">
+                <label for="guest-message">給新人的話</label>
+                <textarea id="guest-message" name="guestMessage" rows="5" maxlength="180" placeholder="寫下您的祝福..." required></textarea>
               </div>
+              <button type="submit" class="btn-submit">送出祝福</button>
+            </form>
+            <p class="guestbook-note">留言會保存在此裝置，並可匯出為 <code>guestbook.txt</code>。</p>
+            <button type="button" id="download-guestbook" class="guestbook-download">下載留言 txt</button>
+          </div>
+
+          <div class="guestbook-panel romantic-board-wrap">
+            <h3 class="guestbook-form-title">浪漫祝福看板</h3>
+            <div class="romantic-board" id="romantic-board">
+              <div class="board-ornament board-ornament-left">✦</div>
+              <div class="board-ornament board-ornament-right">✦</div>
+              <div id="blessings-list" class="blessings-list"></div>
             </div>
-
-            <div class="form-group">
-              <label for="message">留言（飲食限制、歌曲推薦等）</label>
-              <textarea id="message" name="message" rows="4" placeholder="有任何想告訴我們的嗎？"></textarea>
-            </div>
-
-            <button type="submit" class="btn-submit">送出 RSVP</button>
-
-            <p class="form-note">如有任何問題，請聯繫我們：<a href="mailto:claraandalex@example.com">claraandalex@example.com</a></p>
-          </form>
+          </div>
         </div>
       </div>
     </section>
+
+    
   </main>
 
   <!-- Footer -->

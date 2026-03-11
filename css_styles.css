@@ -1924,3 +1924,165 @@ a {
     font-size: 8px !important;
   }
 }
+
+/* ====================================
+   Guestbook Section
+   ==================================== */
+.guestbook-section {
+  background: linear-gradient(180deg, var(--white) 0%, var(--cream) 100%);
+}
+
+.guestbook-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 26px;
+  align-items: stretch;
+}
+
+.guestbook-panel {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  padding: 28px;
+  border: 1px solid rgba(212, 165, 165, 0.25);
+}
+
+.guestbook-form-title {
+  font-family: var(--ff-heading-zh);
+  font-size: 1.5rem;
+  color: var(--text-dark);
+  margin-bottom: 18px;
+}
+
+.guestbook-form textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+
+.guestbook-note {
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.guestbook-download {
+  margin-top: 14px;
+  width: 100%;
+  border: 1px solid var(--dusty-rose-light);
+  background: rgba(212, 165, 165, 0.1);
+  color: var(--dusty-rose-dark);
+  border-radius: 999px;
+  padding: 12px 16px;
+  font-family: var(--ff-body-zh);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.guestbook-download:hover {
+  background: rgba(212, 165, 165, 0.2);
+  transform: translateY(-1px);
+}
+
+.romantic-board-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.romantic-board {
+  position: relative;
+  min-height: 380px;
+  border-radius: 18px;
+  padding: 30px 24px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.5), transparent 45%),
+    linear-gradient(165deg, rgba(232, 196, 196, 0.32), rgba(201, 169, 98, 0.24));
+  border: 1px solid rgba(201, 169, 98, 0.35);
+}
+
+.romantic-board::before {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border: 1px dashed rgba(168, 139, 69, 0.25);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.board-ornament {
+  position: absolute;
+  top: 10px;
+  font-size: 1.1rem;
+  color: var(--gold-dark);
+  opacity: 0.8;
+}
+
+.board-ornament-left {
+  left: 14px;
+}
+
+.board-ornament-right {
+  right: 14px;
+}
+
+.blessings-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.blessing-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(184, 137, 138, 0.22);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 14px rgba(184, 137, 138, 0.12);
+}
+
+.blessing-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.blessing-name {
+  color: var(--dusty-rose-dark);
+  font-weight: 700;
+}
+
+.blessing-message {
+  color: var(--text-dark);
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.blessings-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 10px;
+}
+
+@media (max-width: 900px) {
+  .guestbook-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .romantic-board {
+    min-height: 320px;
+    padding: 24px 16px;
+  }
+
+  .guestbook-panel {
+    padding: 22px;
+  }
+}

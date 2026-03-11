@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSmoothScroll();
   initScrollAnimations();
   initRSVPForm();
+  initGuestbook();
   initFallingPetals();
 });
 
@@ -195,7 +196,7 @@ function initScrollAnimations() {
   
   // Observe elements
   const animatedElements = document.querySelectorAll(
-    '.section-header, .about-content, .countdown-wrapper, .info-card, .timeline-item, .journey-story-card, .rsvp-card'
+    '.section-header, .about-content, .countdown-wrapper, .info-card, .timeline-item, .journey-story-card, .rsvp-card, .guestbook-panel, .blessing-card'
   );
   
   animatedElements.forEach(el => {
@@ -214,6 +215,171 @@ function initScrollAnimations() {
     }
   `;
   document.head.appendChild(style);
+}
+
+// ====================================
+// Guestbook Board
+// ====================================
+function initGuestbook() {
+  const form = document.getElementById('guestbook-form');
+  const list = document.getElementById('blessings-list');
+  const downloadBtn = document.getElementById('download-guestbook');
+
+  if (!form || !list || !downloadBtn) return;
+
+  const STORAGE_KEY = 'weddingGuestbookEntries';
+  const MAX_ENTRIES = 100;
+  let seedEntries = [];
+
+  const escapeHtml = (value) => value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  const formatDate = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  };
+
+  const getLocalEntries = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(entry => entry && entry.name && entry.message);
+    } catch (error) {
+      console.error('Failed to parse guestbook storage:', error);
+      return [];
+    }
+  };
+
+  const saveLocalEntries = (entries) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, MAX_ENTRIES)));
+  };
+
+  const getMergedEntries = () => {
+    return [...getLocalEntries(), ...seedEntries]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  };
+
+  const renderEntries = () => {
+    const entries = getMergedEntries();
+
+    if (!entries.length) {
+      list.innerHTML = '<p class="blessings-empty">第一則祝福，就由你寫下吧。</p>';
+      return;
+    }
+
+    list.innerHTML = entries.map((entry) => `
+      <article class="blessing-card">
+        <div class="blessing-meta">
+          <span class="blessing-name">${escapeHtml(entry.name)}</span>
+          <span>${formatDate(entry.createdAt)}</span>
+        </div>
+        <p class="blessing-message">${escapeHtml(entry.message).replace(/\n/g, '<br>')}</p>
+      </article>
+    `).join('');
+  };
+
+  const buildTxtContent = () => {
+    const lines = ['# Wedding Guestbook', '# Li Bo & Kuo YaHsien', ''];
+    const entries = getMergedEntries();
+
+    entries.forEach((entry, index) => {
+      lines.push(`${index + 1}. ${entry.name} (${formatDate(entry.createdAt)})`);
+      lines.push(entry.message);
+      lines.push('');
+    });
+
+    return lines.join('\n').trim() + '\n';
+  };
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    const nameInput = document.getElementById('guest-name');
+    const messageInput = document.getElementById('guest-message');
+    if (!nameInput || !messageInput) return;
+
+    const name = nameInput.value.trim();
+    const message = messageInput.value.trim();
+
+    if (!name || !message) {
+      alert('請先填寫名字與祝福內容');
+      return;
+    }
+
+    const localEntries = getLocalEntries();
+    localEntries.unshift({
+      name,
+      message,
+      createdAt: new Date().toISOString()
+    });
+
+    saveLocalEntries(localEntries);
+    form.reset();
+    renderEntries();
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    const content = buildTxtContent();
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'guestbook.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  });
+
+  // Preload optional initial blessings from guestbook.txt if it exists.
+  fetch('guestbook.txt')
+    .then((response) => (response.ok ? response.text() : ''))
+    .then((text) => {
+      seedEntries = parseGuestbookTxt(text);
+      renderEntries();
+    })
+    .catch(() => {
+      renderEntries();
+    });
+}
+
+function parseGuestbookTxt(text) {
+  if (!text || typeof text !== 'string') return [];
+
+  const entries = [];
+  const chunks = text.split(/\n\s*\n/);
+
+  chunks.forEach((chunk) => {
+    const lines = chunk.split('\n').map(line => line.trim()).filter(Boolean);
+    if (!lines.length || lines[0].startsWith('#')) return;
+
+    const headerMatch = lines[0].match(/^\d+\.\s+(.+?)\s*\((\d{4}[\/-]\d{2}[\/-]\d{2})\)$/);
+    if (!headerMatch) return;
+
+    const [, name, dateStr] = headerMatch;
+    const message = lines.slice(1).join('\n').trim();
+    if (!message) return;
+
+    const normalizedDate = dateStr.replace(/\//g, '-');
+    entries.push({
+      name,
+      message,
+      createdAt: `${normalizedDate}T00:00:00`
+    });
+  });
+
+  return entries;
 }
 
 // ====================================
