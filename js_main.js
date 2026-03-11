@@ -155,6 +155,17 @@ function initNavigation() {
 // ====================================
 function initSmoothScroll() {
   const links = document.querySelectorAll('a[href^="#"]');
+
+  const getAnchorElement = (targetElement) => {
+    if (!targetElement) return null;
+
+    // For content sections, align to the visible section heading for more accurate jumps.
+    if (targetElement.matches('section')) {
+      return targetElement.querySelector('.section-title') || targetElement;
+    }
+
+    return targetElement;
+  };
   
   links.forEach(link => {
     link.addEventListener('click', (e) => {
@@ -164,7 +175,9 @@ function initSmoothScroll() {
       
       if (targetElement) {
         const navHeight = document.getElementById('navbar')?.offsetHeight || 70;
-        const targetPosition = targetElement.offsetTop - navHeight;
+        const anchorElement = getAnchorElement(targetElement);
+        const anchorTop = anchorElement.getBoundingClientRect().top + window.scrollY;
+        const targetPosition = Math.max(0, anchorTop - navHeight - 8);
         
         window.scrollTo({
           top: targetPosition,
