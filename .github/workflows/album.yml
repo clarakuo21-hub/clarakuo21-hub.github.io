@@ -1,0 +1,25 @@
+name: Update album manifest
+
+on:
+  push:
+    paths:
+      - 'assets/album/**'
+
+jobs:
+  update-manifest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: node generate-album.js
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: update album manifest'
+          file_pattern: assets/album/manifest.json

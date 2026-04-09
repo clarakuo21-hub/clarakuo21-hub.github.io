@@ -2,6 +2,9 @@
   "name": "clarakuo21-hub-github-io",
   "private": true,
   "type": "module",
+  "scripts": {
+    "album": "node generate-album.js"
+  },
   "dependencies": {
     "@vercel/blob": "^0.27.0"
   }

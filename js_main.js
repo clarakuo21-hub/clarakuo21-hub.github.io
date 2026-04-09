@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initRSVPForm();
   initGuestbook();
   initFallingPetals();
+  initAlbumSlideshow();
 });
 
 // ====================================
@@ -615,4 +616,65 @@ function initFallingPetals() {
       }
     }, 800);
   }, 7000); // Start after opening animation
+}
+
+// ====================================
+// Photo Album Slideshow
+// ====================================
+function initAlbumSlideshow() {
+  const container = document.getElementById('album-slide-container');
+  const dotsWrap = document.getElementById('album-dots');
+  const prevBtn = document.getElementById('album-prev');
+  const nextBtn = document.getElementById('album-next');
+  if (!container) return;
+
+  // 從 manifest.json 自動讀取 assets/album/ 下所有照片
+  fetch('assets/album/manifest.json')
+    .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
+    .then(albumImages => buildSlideshow(albumImages, container, dotsWrap, prevBtn, nextBtn))
+    .catch(err => console.warn('相册載入失敗:', err));
+}
+
+function buildSlideshow(albumImages, container, dotsWrap, prevBtn, nextBtn) {
+  if (!albumImages.length) return;
+
+  let current = 0;
+  let autoTimer = null;
+
+  albumImages.forEach((src, i) => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = '相册照片 ' + (i + 1);
+    img.loading = 'lazy';
+    if (i === 0) img.classList.add('active');
+    container.appendChild(img);
+
+    const dot = document.createElement('button');
+    dot.className = 'album-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', '第 ' + (i + 1) + ' 张');
+    dot.addEventListener('click', () => goTo(i));
+    dotsWrap.appendChild(dot);
+  });
+
+  const imgs = container.querySelectorAll('img');
+  const dots = dotsWrap.querySelectorAll('.album-dot');
+
+  function goTo(index) {
+    imgs[current].classList.remove('active');
+    dots[current].classList.remove('active');
+    current = (index + albumImages.length) % albumImages.length;
+    imgs[current].classList.add('active');
+    dots[current].classList.add('active');
+    resetAuto();
+  }
+
+  function resetAuto() {
+    clearInterval(autoTimer);
+    autoTimer = setInterval(() => goTo(current + 1), 4000);
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current - 1));
+  nextBtn.addEventListener('click', () => goTo(current + 1));
+
+  resetAuto();
 }
