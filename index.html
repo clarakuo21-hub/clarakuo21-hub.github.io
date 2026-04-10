@@ -365,11 +365,20 @@
 
         <!-- Photo Album Slideshow -->
         <div class="album-section">
-          <h3 class="album-title">甜蜜相册</h3>
+          <div class="album-header">
+            <p class="album-script">Our Love Story</p>
+            <p class="album-subtitle">Forever Moments</p>
+            <div class="album-header-divider">
+              <span class="divider-line"></span>
+              <span class="divider-heart">♥</span>
+              <span class="divider-line"></span>
+            </div>
+          </div>
           <div class="album-slideshow" id="album-slideshow">
-            <div class="album-slide-container" id="album-slide-container"></div>
+            <div class="album-track" id="album-track"></div>
             <button class="album-btn album-prev" id="album-prev" aria-label="上一张">&#10094;</button>
             <button class="album-btn album-next" id="album-next" aria-label="下一张">&#10095;</button>
+            <div class="album-counter" id="album-counter"></div>
             <div class="album-dots" id="album-dots"></div>
           </div>
         </div>
@@ -429,6 +438,7 @@
   <!-- Falling Petals Container -->
   <div id="petals-container" class="petals-container" aria-hidden="true"></div>
 
+  <script src="assets/album/manifest.js"></script>
   <script src="js_main.js"></script>
 </body>
 </html>

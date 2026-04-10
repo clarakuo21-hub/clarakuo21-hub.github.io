@@ -622,32 +622,28 @@ function initFallingPetals() {
 // Photo Album Slideshow
 // ====================================
 function initAlbumSlideshow() {
-  const container = document.getElementById('album-slide-container');
+  const track = document.getElementById('album-track');
+  if (!track) return;
+
+  const albumImages = window.ALBUM_IMAGES || [];
+  if (!albumImages.length) return;
+
   const dotsWrap = document.getElementById('album-dots');
+  const counter = document.getElementById('album-counter');
   const prevBtn = document.getElementById('album-prev');
   const nextBtn = document.getElementById('album-next');
-  if (!container) return;
-
-  // 從 manifest.json 自動讀取 assets/album/ 下所有照片
-  fetch('assets/album/manifest.json')
-    .then(res => { if (!res.ok) throw new Error(res.status); return res.json(); })
-    .then(albumImages => buildSlideshow(albumImages, container, dotsWrap, prevBtn, nextBtn))
-    .catch(err => console.warn('相册載入失敗:', err));
-}
-
-function buildSlideshow(albumImages, container, dotsWrap, prevBtn, nextBtn) {
-  if (!albumImages.length) return;
 
   let current = 0;
   let autoTimer = null;
 
+  // Build images & dots
   albumImages.forEach((src, i) => {
     const img = document.createElement('img');
     img.src = src;
     img.alt = '相册照片 ' + (i + 1);
-    img.loading = 'lazy';
+    img.loading = i === 0 ? 'eager' : 'lazy';
     if (i === 0) img.classList.add('active');
-    container.appendChild(img);
+    track.appendChild(img);
 
     const dot = document.createElement('button');
     dot.className = 'album-dot' + (i === 0 ? ' active' : '');
@@ -656,8 +652,9 @@ function buildSlideshow(albumImages, container, dotsWrap, prevBtn, nextBtn) {
     dotsWrap.appendChild(dot);
   });
 
-  const imgs = container.querySelectorAll('img');
+  const imgs = track.querySelectorAll('img');
   const dots = dotsWrap.querySelectorAll('.album-dot');
+  updateCounter();
 
   function goTo(index) {
     imgs[current].classList.remove('active');
@@ -665,7 +662,12 @@ function buildSlideshow(albumImages, container, dotsWrap, prevBtn, nextBtn) {
     current = (index + albumImages.length) % albumImages.length;
     imgs[current].classList.add('active');
     dots[current].classList.add('active');
+    updateCounter();
     resetAuto();
+  }
+
+  function updateCounter() {
+    counter.textContent = (current + 1) + ' / ' + albumImages.length;
   }
 
   function resetAuto() {
@@ -676,5 +678,27 @@ function buildSlideshow(albumImages, container, dotsWrap, prevBtn, nextBtn) {
   prevBtn.addEventListener('click', () => goTo(current - 1));
   nextBtn.addEventListener('click', () => goTo(current + 1));
 
+  // Swipe support for mobile
+  let touchStartX = 0;
+  track.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  track.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      diff > 0 ? goTo(current + 1) : goTo(current - 1);
+    }
+  });
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    const slideshow = document.getElementById('album-slideshow');
+    if (!slideshow) return;
+    const rect = slideshow.getBoundingClientRect();
+    const inView = rect.top < window.innerHeight && rect.bottom > 0;
+    if (!inView) return;
+    if (e.key === 'ArrowLeft') goTo(current - 1);
+    if (e.key === 'ArrowRight') goTo(current + 1);
+  });
+
+  // Auto-play every 4 seconds
   resetAuto();
 }

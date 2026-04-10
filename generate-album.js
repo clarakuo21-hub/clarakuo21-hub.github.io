@@ -9,5 +9,6 @@ const files = readdirSync(dir)
   .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
 const manifest = files.map(f => `${dir}/${f}`);
-writeFileSync(join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
-console.log(`manifest.json written with ${manifest.length} images:`, manifest);
+const js = `window.ALBUM_IMAGES = ${JSON.stringify(manifest, null, 2)};\n`;
+writeFileSync(join(dir, 'manifest.js'), js);
+console.log(`manifest.js written with ${manifest.length} images:`, manifest);
