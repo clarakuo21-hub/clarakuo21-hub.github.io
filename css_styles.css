@@ -326,7 +326,7 @@ a {
 }
 
 .hero-names {
-  font-family: var(--ff-heading);
+  font-family: 'MyCustomFont';
   font-size: clamp(3rem, 10vw, 6rem);
   font-weight: 700;
   color: var(--text-dark);
