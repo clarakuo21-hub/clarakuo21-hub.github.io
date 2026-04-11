@@ -46,7 +46,10 @@
   font-style: normal;
   font-display: swap; /* 確保字體載入前，文字不會隱形 */
 }
-
+h1.hero-names {
+  font-family: 'MyCustomFont', sans-serif !important;
+  font-weight: 700; /* 給大標題一個明確的粗細 */
+}
 
 
 /* Reset & Base */
