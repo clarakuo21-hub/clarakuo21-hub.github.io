@@ -36,7 +36,16 @@
   --radius: 16px;
 }
 
-
+/* 引入本地下載的字體 */
+@font-face {
+  font-family: 'MyCustomFont'; /* 你可以自己取一個好記的名字 */
+  /* 指向你剛才放字體的路徑 */
+  src: url('./assets/fonts/NotoSansSC-VariableFont_wght.ttf') format('truetype');
+  /* 因為是可變字重 (Variable Font)，支援各種粗細 */
+  font-weight: 100 900; 
+  font-style: normal;
+  font-display: swap; /* 確保字體載入前，文字不會隱形 */
+}
 
 
 
