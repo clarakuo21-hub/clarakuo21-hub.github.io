@@ -2,6 +2,7 @@ import { list, put } from '@vercel/blob';
 
 const LEGACY_RSVP_PATH = 'rsvp.json';
 const RSVP_ENTRY_PREFIX = 'rsvp-entries/';
+const RSVP_ALL_PATH = 'rsvp-all.json';
 const ENTRY_CACHE_TTL_MS = 5000;
 
 let entriesCache = null;
@@ -222,4 +223,54 @@ export async function writeEntry(entry) {
     }
     withBlobErrorHint(error);
   }
+}
+
+export async function consolidateEntries() {
+  const entries = await readEntries({ forceFresh: true });
+
+  const totalRsvps = entries.length;
+  const attending = entries.filter((e) => e.attending);
+  const notAttending = entries.filter((e) => !e.attending);
+  const totalGuests = attending.reduce((sum, e) => sum + e.guestCount, 0);
+
+  const payload = {
+    consolidatedAt: new Date().toISOString(),
+    summary: {
+      totalRsvps,
+      attendingCount: attending.length,
+      notAttendingCount: notAttending.length,
+      totalGuests
+    },
+    entries
+  };
+
+  const text = JSON.stringify(payload, null, 2);
+  const blobOptions = getBlobOptions();
+
+  try {
+    await put(RSVP_ALL_PATH, text, {
+      access: 'public',
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: 'application/json; charset=utf-8',
+      cacheControlMaxAge: 60,
+      ...blobOptions
+    });
+  } catch (error) {
+    const message = (error && error.message ? error.message : '').toLowerCase();
+    if (message.includes('private store')) {
+      await put(RSVP_ALL_PATH, text, {
+        access: 'private',
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: 'application/json; charset=utf-8',
+        cacheControlMaxAge: 60,
+        ...blobOptions
+      });
+      return payload;
+    }
+    withBlobErrorHint(error);
+  }
+
+  return payload;
 }
