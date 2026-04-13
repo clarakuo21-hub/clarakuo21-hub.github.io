@@ -288,7 +288,7 @@ function initAttendance() {
             感谢您的回复！
           </h3>
           <p style="color:var(--text-light);">
-            ${isYes ? '期待与您共同庆祝！' : '我们会想念您的！'}
+            ${isYes ? '期待与您共同庆祝！' : '我们下次再约喔！'}
           </p>
         </div>`;
     } catch (err) {

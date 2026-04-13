@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import {
   ensureBlobConfigured,
   readEntries,
@@ -5,6 +7,28 @@ import {
 } from './_rsvp_blob.js';
 
 const MAX_ENTRIES = 500;
+
+function getTaiwanTimestamp() {
+  const formatter = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(new Date());
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== 'literal')
+      .map((part) => [part.type, part.value])
+  );
+
+  return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}+08:00`;
+}
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -35,23 +59,17 @@ export default async function handler(req, res) {
       }
 
       const entry = {
+        id: randomUUID(),
         name: safeName,
         attending: safeAttending,
         guestCount: safeGuestCount,
-        createdAt: new Date().toISOString()
+        createdAt: getTaiwanTimestamp()
       };
 
-      const entries = await readEntries();
-
-      // Replace existing entry by same name, or add new
-      const existingIndex = entries.findIndex(
-        (e) => e.name.toLowerCase() === safeName.toLowerCase()
-      );
-      if (existingIndex >= 0) {
-        entries[existingIndex] = entry;
-      } else {
-        entries.unshift(entry);
-      }
+      // Force a fresh read before overwrite so concurrent serverless instances
+      // do not write back a stale cached copy and drop earlier submissions.
+      const entries = await readEntries({ forceFresh: true });
+      entries.unshift(entry);
 
       await writeEntries(entries.slice(0, MAX_ENTRIES));
       return res.status(201).json({ entry });
