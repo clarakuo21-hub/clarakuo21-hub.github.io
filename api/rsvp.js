@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import {
   ensureBlobConfigured,
   readEntries,
-  writeEntries
+  writeEntry
 } from './_rsvp_blob.js';
 
 const MAX_ENTRIES = 500;
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       const entries = await readEntries();
-      return res.status(200).json({ entries });
+      return res.status(200).json({ entries: entries.slice(0, MAX_ENTRIES) });
     }
 
     if (req.method === 'POST') {
@@ -66,12 +66,7 @@ export default async function handler(req, res) {
         createdAt: getTaiwanTimestamp()
       };
 
-      // Force a fresh read before overwrite so concurrent serverless instances
-      // do not write back a stale cached copy and drop earlier submissions.
-      const entries = await readEntries({ forceFresh: true });
-      entries.unshift(entry);
-
-      await writeEntries(entries.slice(0, MAX_ENTRIES));
+      await writeEntry(entry);
       return res.status(201).json({ entry });
     }
 
