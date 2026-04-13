@@ -119,6 +119,7 @@
         <li><a href="#home" class="nav-link active">首页</a></li>
         <li><a href="#about" class="nav-link">关于我们</a></li>
         <li><a href="#wedding-info" class="nav-link">婚礼资讯</a></li>
+        <li><a href="#attendance" class="nav-link">出席回复</a></li>
         <li><a href="#rsvp" class="nav-link nav-cta">宾客留言板</a></li>
       </ul>
     </div>
@@ -380,6 +381,41 @@
             <button class="album-btn album-next" id="album-next" aria-label="下一张">&#10095;</button>
             <div class="album-counter" id="album-counter"></div>
             <div class="album-dots" id="album-dots"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!--賓客回復-->
+    <!-- Attendance RSVP Section -->
+    <section id="attendance" class="section attendance-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">出席回复</h2>
+          <p class="section-subtitle">RSVP</p>
+        </div>
+
+        <div class="attendance-grid">
+          <div class="attendance-panel attendance-single">
+            <h3 class="attendance-form-title">请告诉我们您是否出席</h3>
+            <form id="attendance-form" class="attendance-form" novalidate>
+              <div class="form-group">
+                <label for="att-name">您的名字</label>
+                <input id="att-name" name="attName" type="text" maxlength="24" placeholder="例如：小美" required>
+              </div>
+              <div class="form-group">
+                <label for="att-attending">是否参加？</label>
+                <select id="att-attending" name="attAttending" required>
+                  <option value="" disabled selected>请选择</option>
+                  <option value="yes">是的，我会参加 🎉</option>
+                  <option value="no">很遗憾，无法参加</option>
+                </select>
+              </div>
+              <div class="form-group att-guest-count-group" id="att-guest-count-group" style="display:none;">
+                <label for="att-guest-count">参加人数（包含您自己）</label>
+                <input id="att-guest-count" name="attGuestCount" type="number" min="1" max="20" value="1" placeholder="1">
+              </div>
+              <button type="submit" class="btn-submit">送出回复</button>
+            </form>
           </div>
         </div>
       </div>

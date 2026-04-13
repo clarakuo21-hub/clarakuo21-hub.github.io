@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSmoothScroll();
   initScrollAnimations();
   initRSVPForm();
+  initAttendance();
   initGuestbook();
   initFallingPetals();
   initAlbumSlideshow();
@@ -229,6 +230,73 @@ function initScrollAnimations() {
     }
   `;
   document.head.appendChild(style);
+}
+
+// ====================================
+// Attendance RSVP
+// ====================================
+function initAttendance() {
+  const form = document.getElementById('attendance-form');
+  const attendingSelect = document.getElementById('att-attending');
+  const guestCountGroup = document.getElementById('att-guest-count-group');
+
+  if (!form) return;
+
+  const RSVP_API = '/api/rsvp';
+
+  // Show/hide guest count based on attendance selection
+  if (attendingSelect && guestCountGroup) {
+    attendingSelect.addEventListener('change', () => {
+      if (attendingSelect.value === 'yes') {
+        guestCountGroup.style.display = 'block';
+      } else {
+        guestCountGroup.style.display = 'none';
+      }
+    });
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const nameInput = document.getElementById('att-name');
+    const name = (nameInput ? nameInput.value : '').trim();
+    const attending = attendingSelect ? attendingSelect.value : '';
+
+    if (!name) { alert('请填写您的名字'); return; }
+    if (!attending) { alert('请选择是否参加'); return; }
+
+    const isYes = attending === 'yes';
+    const guestCountInput = document.getElementById('att-guest-count');
+    const guestCount = isYes ? parseInt(guestCountInput?.value, 10) || 1 : 0;
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '送出中...'; }
+
+    try {
+      const res = await fetch(RSVP_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, attending: isYes, guestCount })
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || '送出失败');
+
+      form.innerHTML = `
+        <div style="text-align:center;padding:40px 20px;">
+          <div style="font-size:4rem;margin-bottom:20px;">${isYes ? '🎉' : '💌'}</div>
+          <h3 style="font-family:var(--ff-heading);font-size:1.5rem;color:var(--text-dark);margin-bottom:15px;">
+            感谢您的回复！
+          </h3>
+          <p style="color:var(--text-light);">
+            ${isYes ? '期待与您共同庆祝！' : '我们会想念您的！'}
+          </p>
+        </div>`;
+    } catch (err) {
+      console.error(err);
+      alert(`目前无法送出: ${err.message || '未知错误'}`);
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '送出回复'; }
+    }
+  });
 }
 
 // ====================================

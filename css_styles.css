@@ -2089,6 +2089,48 @@ a {
 }
 
 /* ====================================
+   Attendance RSVP Section
+   ==================================== */
+.attendance-section {
+  background: linear-gradient(180deg, var(--cream) 0%, var(--white) 100%);
+}
+
+.attendance-grid {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.attendance-panel {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  padding: 28px;
+  border: 1px solid rgba(212, 165, 165, 0.25);
+}
+
+.attendance-form-title {
+  font-family: var(--ff-heading-zh);
+  font-size: 1.5rem;
+  color: var(--text-dark);
+  margin-bottom: 18px;
+}
+
+.att-guest-count-group {
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 900px) {
+  .attendance-grid {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .attendance-panel {
+    padding: 22px;
+  }
+}
+/* ====================================
    Guestbook Section
    ==================================== */
 .guestbook-section {
