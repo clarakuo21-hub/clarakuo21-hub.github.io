@@ -1,4 +1,4 @@
-import { get, list, put } from '@vercel/blob';
+import { list, put } from '@vercel/blob';
 
 const LEGACY_RSVP_PATH = 'rsvp.json';
 const RSVP_ENTRY_PREFIX = 'rsvp-entries/';
@@ -32,11 +32,6 @@ function withBlobErrorHint(error) {
   throw error;
 }
 
-function isPrivateStoreAccessError(error) {
-  const message = (error && error.message ? error.message : '').toLowerCase();
-  return message.includes('public access') && message.includes('private store');
-}
-
 function isObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
@@ -66,13 +61,18 @@ function setEntriesCache(entries) {
   entriesCacheAt = Date.now();
 }
 
+function clearEntriesCache() {
+  entriesCache = null;
+  entriesCacheAt = 0;
+}
+
 function getEntriesCache() {
   if (!Array.isArray(entriesCache)) return null;
   if (Date.now() - entriesCacheAt > ENTRY_CACHE_TTL_MS) return null;
   return entriesCache.slice();
 }
 
-async function listRsvpEntryBlobs() {
+async function listAllBlobs(prefix) {
   const blobOptions = getBlobOptions();
   const blobs = [];
   let cursor;
@@ -82,7 +82,7 @@ async function listRsvpEntryBlobs() {
     let response;
     try {
       response = await list({
-        prefix: RSVP_ENTRY_PREFIX,
+        prefix,
         limit: 1000,
         cursor,
         ...blobOptions
@@ -99,44 +99,32 @@ async function listRsvpEntryBlobs() {
   return blobs;
 }
 
-async function getBlobText(pathname) {
-  const blobOptions = getBlobOptions();
+async function findLatestBlobByPathname(pathname) {
+  const blobs = await listAllBlobs(pathname);
+  const matches = blobs
+    .filter((blob) => blob.pathname === pathname)
+    .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
 
-  try {
-    const result = await get(pathname, {
-      access: 'public',
-      ...blobOptions
-    });
+  return matches[0] || null;
+}
 
-    if (!result || !result.stream) return null;
-    return await new Response(result.stream).text();
-  } catch (error) {
-    if (!isPrivateStoreAccessError(error)) {
-      withBlobErrorHint(error);
-    }
+async function readBlobText(blob) {
+  if (!blob) return null;
+
+  const sourceUrl = blob.downloadUrl || blob.url;
+  const response = await fetch(sourceUrl, { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`Unable to read rsvp blob: ${response.status}`);
   }
 
-  try {
-    const result = await get(pathname, {
-      access: 'private',
-      ...blobOptions
-    });
-
-    if (!result || !result.stream) return null;
-    return await new Response(result.stream).text();
-  } catch (error) {
-    const message = (error && error.message ? error.message : '').toLowerCase();
-    if (message.includes('not found')) {
-      return null;
-    }
-    withBlobErrorHint(error);
-  }
-
-  return null;
+  return await response.text();
 }
 
 async function readLegacyEntries() {
-  const text = await getBlobText(LEGACY_RSVP_PATH);
+  const legacyBlob = await findLatestBlobByPathname(LEGACY_RSVP_PATH);
+  if (!legacyBlob) return [];
+
+  const text = await readBlobText(legacyBlob);
   if (!text) return [];
 
   try {
@@ -148,8 +136,8 @@ async function readLegacyEntries() {
   }
 }
 
-async function readEntryBlob(pathname) {
-  const text = await getBlobText(pathname);
+async function readEntryBlob(blob) {
+  const text = await readBlobText(blob);
   if (!text) return null;
 
   try {
@@ -166,12 +154,7 @@ function mergeEntries(entries) {
     if (!entry || !entry.id) return;
 
     const existing = byId.get(entry.id);
-    if (!existing) {
-      byId.set(entry.id, entry);
-      return;
-    }
-
-    if (new Date(entry.createdAt) > new Date(existing.createdAt)) {
+    if (!existing || new Date(entry.createdAt) > new Date(existing.createdAt)) {
       byId.set(entry.id, entry);
     }
   });
@@ -179,6 +162,11 @@ function mergeEntries(entries) {
   return Array.from(byId.values()).sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   );
+}
+
+function makeEntryPathname(entry) {
+  const safeTimestamp = entry.createdAt.replace(/[^0-9]/g, '');
+  return `${RSVP_ENTRY_PREFIX}${safeTimestamp}-${entry.id}.json`;
 }
 
 export async function readEntries({ forceFresh = false } = {}) {
@@ -189,14 +177,11 @@ export async function readEntries({ forceFresh = false } = {}) {
 
   const [legacyEntries, entryBlobs] = await Promise.all([
     readLegacyEntries(),
-    listRsvpEntryBlobs()
+    listAllBlobs(RSVP_ENTRY_PREFIX)
   ]);
 
-  const blobEntries = await Promise.all(
-    entryBlobs.map((blob) => readEntryBlob(blob.pathname))
-  );
-
-  const entries = mergeEntries([...blobEntries, ...legacyEntries]);
+  const blobEntries = await Promise.all(entryBlobs.map((blob) => readEntryBlob(blob)));
+  const entries = mergeEntries([...legacyEntries, ...blobEntries]);
   setEntriesCache(entries);
   return entries;
 }
@@ -207,7 +192,7 @@ export async function writeEntry(entry) {
     throw new Error('Invalid RSVP entry.');
   }
 
-  const pathname = `${RSVP_ENTRY_PREFIX}${normalizedEntry.createdAt}-${normalizedEntry.id}.json`;
+  const pathname = makeEntryPathname(normalizedEntry);
   const text = JSON.stringify(normalizedEntry, null, 2);
   const blobOptions = getBlobOptions();
 
@@ -218,8 +203,7 @@ export async function writeEntry(entry) {
       contentType: 'application/json; charset=utf-8',
       ...blobOptions
     });
-    entriesCache = null;
-    entriesCacheAt = 0;
+    clearEntriesCache();
   } catch (error) {
     const message = (error && error.message ? error.message : '').toLowerCase();
     if (message.includes('private store')) {
@@ -230,8 +214,7 @@ export async function writeEntry(entry) {
           contentType: 'application/json; charset=utf-8',
           ...blobOptions
         });
-        entriesCache = null;
-        entriesCacheAt = 0;
+        clearEntriesCache();
         return;
       } catch (retryError) {
         withBlobErrorHint(retryError);
