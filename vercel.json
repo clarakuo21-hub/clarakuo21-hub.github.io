@@ -1,8 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/rsvp-consolidate",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
+{}
