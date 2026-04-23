@@ -1,9 +1,21 @@
 window.ALBUM_IMAGES = [
   "assets/album/137399.jpg",
-  "assets/album/137412.jpg",
-  "assets/album/137417.png",
-  "assets/album/137423.jpg",
-  "assets/album/137424.jpg",
-  "assets/album/137427.jpg",
-  "assets/album/137428.jpg"
+  "assets/album/L06A4814.jpg",
+  "assets/album/L06A4949.jpg",
+  "assets/album/L06A5049.jpg",
+  "assets/album/L06A5095.jpg",
+  "assets/album/L06A5142.jpg",
+  "assets/album/L06A5220.jpg",
+  "assets/album/L06A5256.jpg",
+  "assets/album/L06A5313.jpg",
+  "assets/album/L06A5499.jpg",
+  "assets/album/L06A6082.jpg",
+  "assets/album/L06A6130.jpg",
+  "assets/album/L06A6218.jpg",
+  "assets/album/L06A6233.jpg",
+  "assets/album/L06A6311.jpg",
+  "assets/album/L06A6328.jpg",
+  "assets/album/L06A6331.jpg",
+  "assets/album/L06A6365.jpg",
+  "assets/album/L06A6390.jpg"
 ];
