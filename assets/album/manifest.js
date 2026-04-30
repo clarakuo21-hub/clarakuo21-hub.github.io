@@ -10,11 +10,9 @@ window.ALBUM_IMAGES = [
   "assets/album/L06A5313.jpg",
   "assets/album/L06A5499.jpg",
   "assets/album/L06A6082.jpg",
-  "assets/album/L06A6130.jpg",
   "assets/album/L06A6218.jpg",
   "assets/album/L06A6233.jpg",
   "assets/album/L06A6311.jpg",
-  "assets/album/L06A6328.jpg",
   "assets/album/L06A6331.jpg",
   "assets/album/L06A6365.jpg",
   "assets/album/L06A6390.jpg"
