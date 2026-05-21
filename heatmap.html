@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>產業熱力圖 - 台股分析平台</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <style>
+    #heatmapChart { width: 100%; height: 700px; }
+    .heatmap-info { font-size: 13px; color: #aaa; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .legend-row { display: flex; gap: 8px; align-items: center; font-size: 11px; color: #888; }
+    .legend-box { width: 24px; height: 14px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <script src="js/nav.js"></script>
+  <div class="page-container">
+    <div class="card">
+      <div class="heatmap-info">
+        <span id="dateInfo">產業熱力圖</span>
+        <div class="legend-row">
+          <div class="legend-box" style="background:#b71c1c;"></div><span>跌 &gt;3%</span>
+          <div class="legend-box" style="background:#ef5350;"></div><span>跌</span>
+          <div class="legend-box" style="background:#333;"></div><span>平盤</span>
+          <div class="legend-box" style="background:#26a69a;"></div><span>漲</span>
+          <div class="legend-box" style="background:#1b5e20;"></div><span>漲 &gt;3%</span>
+        </div>
+      </div>
+      <div class="error-msg" id="error"></div>
+      <div class="loading" id="loading">⏳ 載入市場資料中（首次約需 30 秒）...</div>
+      <div id="heatmapChart"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let chart = null;
+
+    window.addEventListener('DOMContentLoaded', loadHeatmap);
+
+    async function loadHeatmap() {
+      const loading = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+
+      errorDiv.classList.remove('show');
+      loading.classList.add('show');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/getHeatmap`);
+        const data = await res.json();
+        if (!res.ok) { showError(data.error || '載入失敗'); return; }
+        document.getElementById('dateInfo').textContent = `產業熱力圖 - ${data.date}${data.cached ? ' [快取]' : ''}`;
+        renderHeatmap(data.treemapData);
+      } catch (err) {
+        showError('網路錯誤: ' + err.message);
+      } finally {
+        loading.classList.remove('show');
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.classList.add('show');
+      document.getElementById('loading').classList.remove('show');
+    }
+
+    function getColor(pct) {
+      if (pct >= 3) return '#1b5e20';
+      if (pct >= 1.5) return '#2e7d32';
+      if (pct >= 0.5) return '#388e3c';
+      if (pct >= 0) return '#26a69a';
+      if (pct >= -0.5) return '#ef5350';
+      if (pct >= -1.5) return '#d32f2f';
+      if (pct >= -3) return '#c62828';
+      return '#b71c1c';
+    }
+
+    function renderHeatmap(treemapData) {
+      const chartDom = document.getElementById('heatmapChart');
+      if (chart) chart.dispose();
+      chart = echarts.init(chartDom, 'dark');
+
+      // Color all leaf nodes by changePct
+      function colorize(nodes) {
+        for (const node of nodes) {
+          if (node.children) {
+            colorize(node.children);
+          } else {
+            node.itemStyle = { color: getColor(node.changePct || 0), borderColor: '#111', borderWidth: 1 };
+          }
+        }
+      }
+      colorize(treemapData);
+
+      const option = {
+        backgroundColor: 'transparent',
+        tooltip: {
+          formatter: function(info) {
+            if (!info.data || info.data.children) {
+              return `<b>${info.name}</b>`;
+            }
+            const d = info.data;
+            const sign = d.changePct >= 0 ? '+' : '';
+            const color = d.changePct >= 0 ? '#26a69a' : '#ef5350';
+            return `<b>${d.name.replace('\n', ' ')}</b><br/>收盤: ${d.close || '-'}<br/><span style="color:${color}">${sign}${d.changePct}%</span>`;
+          }
+        },
+        series: [{
+          type: 'treemap',
+          data: treemapData,
+          width: '100%',
+          height: '100%',
+          roam: false,
+          nodeClick: 'link',
+          breadcrumb: { show: true, itemStyle: { color: '#2a2a3e', borderColor: '#444' }, textStyle: { color: '#aaa' } },
+          label: {
+            show: true,
+            formatter: function(params) {
+              if (params.data.children) return params.name;
+              const pct = params.data.changePct;
+              const sign = pct >= 0 ? '+' : '';
+              return `{name|${params.data.id || ''}}\n{pct|${sign}${pct}%}`;
+            },
+            rich: {
+              name: { fontSize: 11, color: '#fff', lineHeight: 16 },
+              pct: { fontSize: 10, color: '#ddd', lineHeight: 14 }
+            }
+          },
+          upperLabel: { show: true, height: 20, color: '#fff', fontSize: 12, backgroundColor: 'rgba(0,0,0,0.3)', padding: [2, 6] },
+          levels: [
+            { itemStyle: { borderColor: '#555', borderWidth: 2, gapWidth: 2 }, upperLabel: { show: true } },
+            { itemStyle: { borderColor: '#333', borderWidth: 1, gapWidth: 1 }, label: { show: true } },
+          ],
+        }]
+      };
+
+      chart.setOption(option);
+
+      // Click to navigate
+      chart.on('click', function(params) {
+        if (params.data && params.data.id) {
+          window.location.href = `chart.html?stock=${params.data.id}`;
+        }
+      });
+
+      window.addEventListener('resize', () => chart && chart.resize());
+    }
+  </script>
+</body>
+</html>

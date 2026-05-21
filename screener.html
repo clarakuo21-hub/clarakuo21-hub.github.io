@@ -1,0 +1,144 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>條件選股器 - 台股分析平台</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .filter-panel { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 11px; color: #888; }
+    .filter-group input { width: 80px; padding: 6px 8px; font-size: 13px; background: #1a1a2e; border: 1px solid #444; border-radius: 4px; color: #fff; }
+    .filter-group input:focus { outline: none; border-color: #4361ee; }
+    .filter-panel button { padding: 8px 20px; font-size: 13px; background: #4361ee; color: #fff; border: none; border-radius: 6px; cursor: pointer; height: 34px; }
+    .filter-panel button:hover { background: #3a56d4; }
+    .result-info { font-size: 13px; color: #aaa; margin-bottom: 10px; }
+    .stock-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .stock-table th { text-align: left; padding: 10px 8px; color: #888; border-bottom: 1px solid #333; font-weight: 500; }
+    .stock-table td { padding: 10px 8px; border-bottom: 1px solid #222; color: #ddd; }
+    .stock-table tr:hover td { background: rgba(67,97,238,0.08); }
+    .stock-table .link { color: #64b5f6; text-decoration: none; cursor: pointer; }
+    .stock-table .link:hover { text-decoration: underline; }
+    .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
+    .pagination button { padding: 6px 12px; font-size: 12px; background: #2a2a3e; color: #ccc; border: 1px solid #444; border-radius: 4px; cursor: pointer; }
+    .pagination button:hover { background: #3a3a5e; }
+    .pagination button.active { background: #4361ee; color: #fff; border-color: #4361ee; }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <script src="js/nav.js"></script>
+  <div class="page-container">
+    <div class="card">
+      <h2 style="margin-bottom:16px;color:#fff;font-size:18px;">條件選股器</h2>
+      <div class="filter-panel">
+        <div class="filter-group"><label>本益比 (PE)</label><div style="display:flex;gap:4px;align-items:center;"><input type="number" id="peMin" value="5" step="1" /><span style="color:#666;">~</span><input type="number" id="peMax" value="25" step="1" /></div></div>
+        <div class="filter-group"><label>股價淨值比 (PB)</label><div style="display:flex;gap:4px;align-items:center;"><input type="number" id="pbMin" value="0" step="0.1" /><span style="color:#666;">~</span><input type="number" id="pbMax" value="5" step="0.1" /></div></div>
+        <div class="filter-group"><label>殖利率 (%)</label><div style="display:flex;gap:4px;align-items:center;"><input type="number" id="yieldMin" value="3" step="0.5" /><span style="color:#666;">~</span><input type="number" id="yieldMax" value="99" step="0.5" /></div></div>
+        <button id="searchBtn">篩選</button>
+      </div>
+      <div class="error-msg" id="error"></div>
+      <div class="loading" id="loading">⏳ 篩選中...</div>
+      <div id="resultArea" style="display:none;">
+        <div class="result-info" id="resultInfo"></div>
+        <table class="stock-table">
+          <thead><tr><th>代號</th><th>名稱</th><th>收盤</th><th>PE</th><th>PB</th><th>殖利率%</th><th>操作</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let currentPage = 1;
+    let lastParams = {};
+
+    document.getElementById('searchBtn').addEventListener('click', () => { currentPage = 1; doSearch(); });
+
+    // Auto-search on load
+    window.addEventListener('DOMContentLoaded', () => doSearch());
+
+    async function doSearch() {
+      const params = {
+        pe_min: document.getElementById('peMin').value,
+        pe_max: document.getElementById('peMax').value,
+        pb_min: document.getElementById('pbMin').value,
+        pb_max: document.getElementById('pbMax').value,
+        yield_min: document.getElementById('yieldMin').value,
+        yield_max: document.getElementById('yieldMax').value,
+        page: currentPage,
+        limit: 30,
+      };
+      lastParams = params;
+
+      const loading = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      const resultArea = document.getElementById('resultArea');
+
+      errorDiv.classList.remove('show');
+      loading.classList.add('show');
+      resultArea.style.display = 'none';
+
+      try {
+        const qs = Object.entries(params).map(([k,v]) => `${k}=${v}`).join('&');
+        const res = await fetch(`${API_BASE}/api/getScreener?${qs}`);
+        const data = await res.json();
+        if (!res.ok) { showError(data.error || '篩選失敗'); return; }
+        renderResults(data);
+      } catch (err) {
+        showError('網路錯誤: ' + err.message);
+      } finally {
+        loading.classList.remove('show');
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.classList.add('show');
+      document.getElementById('loading').classList.remove('show');
+    }
+
+    function renderResults(data) {
+      const resultArea = document.getElementById('resultArea');
+      const info = document.getElementById('resultInfo');
+      const tbody = document.getElementById('tbody');
+      const pagination = document.getElementById('pagination');
+
+      resultArea.style.display = 'block';
+      info.textContent = `共 ${data.total} 檔符合條件（第 ${data.page}/${data.totalPages} 頁）${data.cached ? ' [快取]' : ''}`;
+
+      tbody.innerHTML = data.stocks.map(s => `
+        <tr>
+          <td><a class="link" href="chart.html?stock=${s.id}">${s.id}</a></td>
+          <td>${s.name}</td>
+          <td>${s.close || '-'}</td>
+          <td>${s.pe || '-'}</td>
+          <td>${s.pb || '-'}</td>
+          <td>${s.yield || '-'}</td>
+          <td><a class="link" href="chart.html?stock=${s.id}">K線</a> | <a class="link" href="financials.html?stock=${s.id}">財報</a></td>
+        </tr>
+      `).join('');
+
+      // Pagination
+      let pagHtml = '';
+      pagHtml += `<button ${data.page <= 1 ? 'disabled' : ''} onclick="goPage(${data.page - 1})">◀</button>`;
+      const start = Math.max(1, data.page - 2);
+      const end = Math.min(data.totalPages, data.page + 2);
+      for (let i = start; i <= end; i++) {
+        pagHtml += `<button class="${i === data.page ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      pagHtml += `<button ${data.page >= data.totalPages ? 'disabled' : ''} onclick="goPage(${data.page + 1})">▶</button>`;
+      pagination.innerHTML = pagHtml;
+    }
+
+    function goPage(p) {
+      currentPage = p;
+      doSearch();
+    }
+  </script>
+</body>
+</html>

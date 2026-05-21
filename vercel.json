@@ -8,6 +8,12 @@
     },
     "api/getFinancials.js": {
       "maxDuration": 60
+    },
+    "api/getScreener.js": {
+      "maxDuration": 60
+    },
+    "api/getHeatmap.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
