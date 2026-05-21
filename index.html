@@ -1,480 +1,296 @@
-<!doctype html>
-<html lang="zh-CN">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>You're Invited — Li Bo & Kuo YaHsien</title>
-  <meta name="description" content="Wedding of 李博 & 郭亞弦 — join us to celebrate on May 20, 2026. RSVP inside." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♥️</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=LXGW+WenKai:wght@300;400;700&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css_styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>本益比河流圖 - PE River Chart</title>
+  <!-- Chart.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #1a1a2e;
+    }
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    .search-bar input {
+      padding: 10px 16px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      width: 200px;
+      transition: border-color 0.3s;
+    }
+    .search-bar input:focus {
+      outline: none;
+      border-color: #4361ee;
+    }
+    .search-bar button {
+      padding: 10px 24px;
+      font-size: 16px;
+      background: #4361ee;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .search-bar button:hover { background: #3a56d4; }
+    .search-bar button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+    .chart-container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      position: relative;
+    }
+    .info-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .info-bar .stock-info {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .info-bar .eps-info {
+      font-size: 14px;
+      color: #666;
+    }
+    .info-bar .cache-badge {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    #loading {
+      display: none;
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 18px;
+      color: #666;
+    }
+    #loading.show { display: block; }
+    #error {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #d32f2f;
+      background: #ffebee;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    #error.show { display: block; }
+    .legend-note {
+      text-align: center;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #888;
+    }
+  </style>
 </head>
 <body>
-  <div id="opening-animation" class="opening-overlay">
-    <div class="map-background">
-      <div class="map-wrapper">
-        <svg class="world-map-svg" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
-          <rect width="1000" height="500" fill="none"/>
-          
-          <g class="map-grid" stroke="rgba(201,169,98,0.12)" stroke-width="0.5" fill="none">
-            <line x1="0" y1="125" x2="1000" y2="125"/>
-            <line x1="0" y1="250" x2="1000" y2="250"/>
-            <line x1="0" y1="375" x2="1000" y2="375"/>
-            <line x1="200" y1="0" x2="200" y2="500"/>
-            <line x1="400" y1="0" x2="400" y2="500"/>
-            <line x1="600" y1="0" x2="600" y2="500"/>
-            <line x1="800" y1="0" x2="800" y2="500"/>
-          </g>
-
-          <g class="continents" fill="rgba(212,165,165,0.22)" stroke="rgba(180,137,138,0.4)" stroke-width="1" stroke-linejoin="round">
-            <path d="M55,48 L62,42 L74,38 L90,36 L105,40 L118,36 L130,32 L148,30 L160,35 L168,42 L172,50 L168,58 L158,62 L150,70 L155,78 L165,80 L175,76 L185,72 L192,68 L198,65 L206,68 L210,75 L205,82 L195,88 L188,95 L182,100 L178,108 L180,115 L185,120 L190,128 L195,135 L192,142 L185,148 L178,152 L170,158 L162,165 L158,172 L152,178 L148,185 L145,192 L140,198 L132,202 L125,198 L118,192 L112,185 L108,178 L102,172 L95,168 L88,162 L82,155 L78,148 L75,140 L72,132 L70,125 L68,118 L65,112 L60,105 L55,98 L50,90 L48,82 L48,72 L50,62 L52,55 Z"/>
-            <path d="M230,22 L245,18 L260,20 L272,25 L278,35 L275,45 L268,52 L258,55 L248,52 L240,46 L235,38 L232,30 Z"/>
-            <path d="M130,202 L135,208 L140,215 L148,220 L155,225 L160,232 L162,238 L158,242 L152,240 L145,235 L138,230 L132,225 L128,218 L125,210 L128,205 Z"/>
-            <path d="M168,248 L178,242 L188,240 L198,242 L208,248 L218,255 L225,262 L230,272 L232,282 L233,292 L232,305 L228,318 L222,330 L218,342 L215,352 L210,362 L205,370 L198,378 L192,385 L188,392 L185,398 L180,405 L175,410 L170,415 L168,420 L172,428 L178,432 L182,438 L180,442 L175,445 L170,442 L168,435 L162,430 L158,422 L155,412 L152,402 L150,392 L148,382 L148,372 L150,362 L152,352 L155,340 L158,328 L160,318 L162,308 L165,298 L168,288 L170,278 L170,268 L168,258 Z"/>
-            <path d="M410,55 L418,48 L428,45 L438,42 L448,40 L458,38 L465,42 L470,48 L475,55 L480,52 L488,48 L495,50 L502,55 L508,60 L515,58 L522,55 L528,60 L530,68 L525,75 L518,80 L510,85 L505,92 L508,98 L515,102 L520,108 L518,115 L512,120 L505,125 L498,128 L492,132 L485,135 L478,132 L472,128 L468,122 L465,115 L460,110 L455,108 L448,112 L442,118 L435,122 L428,118 L422,112 L418,105 L415,98 L412,90 L410,82 L408,72 L408,62 Z"/>
-            <path d="M395,62 L400,58 L406,60 L408,66 L405,72 L398,74 L393,70 L392,65 Z"/>
-            <path d="M388,65 L392,62 L394,66 L392,70 L388,68 Z"/>
-            <path d="M462,22 L468,18 L475,15 L482,18 L488,25 L492,32 L495,40 L492,48 L488,52 L482,48 L478,42 L475,35 L472,28 L468,25 Z"/>
-            <path d="M472,128 L475,135 L478,142 L480,148 L482,155 L478,160 L474,156 L472,150 L470,142 L468,135 Z"/>
-            <path d="M492,135 L496,140 L498,148 L495,152 L490,148 L488,142 L490,138 Z"/>
-            <path d="M418,162 L428,158 L438,155 L448,158 L458,160 L468,162 L478,165 L488,168 L498,172 L508,178 L515,185 L520,195 L522,205 L524,218 L525,230 L524,245 L522,258 L518,272 L515,285 L510,298 L505,310 L498,322 L492,332 L485,342 L478,350 L470,356 L462,360 L455,358 L450,352 L445,345 L440,335 L436,325 L432,315 L430,305 L428,292 L425,280 L422,268 L420,255 L418,242 L416,228 L415,215 L415,202 L415,190 L416,178 L417,168 Z"/>
-            <path d="M525,322 L530,318 L534,325 L535,335 L532,345 L528,348 L524,342 L522,332 Z"/>
-            <path d="M528,60 L540,55 L555,50 L570,45 L588,42 L605,40 L625,38 L648,36 L670,35 L695,34 L718,35 L740,38 L758,40 L778,42 L795,45 L810,50 L822,55 L832,62 L838,70 L842,78 L845,88 L842,95 L835,100 L828,105 L820,108 L810,110 L800,108 L795,102 L790,95 L785,90 L778,88 L770,90 L762,95 L755,100 L748,105 L740,108 L732,112 L725,115 L718,112 L712,108 L705,105 L698,108 L690,112 L682,115 L675,118 L668,120 L660,122 L652,120 L645,115 L638,110 L630,108 L622,110 L615,115 L608,118 L600,120 L592,118 L585,112 L578,108 L570,105 L562,102 L555,98 L548,92 L542,85 L538,78 L535,70 L532,65 Z"/>
-            <path d="M508,145 L518,142 L528,140 L535,145 L540,152 L545,160 L548,168 L545,178 L540,188 L535,195 L528,200 L520,205 L515,198 L510,190 L505,180 L502,170 L502,160 L505,152 Z"/>
-            <path d="M610,145 L618,142 L628,145 L635,150 L640,158 L642,168 L640,180 L636,192 L630,205 L625,215 L618,225 L612,232 L608,225 L605,215 L602,205 L600,195 L598,185 L598,175 L600,165 L602,155 Z"/>
-            <path d="M660,90 L670,85 L682,88 L695,92 L708,95 L718,98 L728,102 L738,108 L745,115 L750,122 L755,130 L758,138 L760,148 L758,158 L754,165 L748,170 L740,175 L732,178 L722,180 L712,178 L702,175 L695,170 L688,165 L680,162 L672,158 L665,155 L658,150 L652,145 L648,138 L645,130 L645,120 L648,110 L652,100 L656,95 Z"/>
-            <path d="M685,180 L692,178 L700,175 L708,180 L715,188 L718,198 L715,208 L710,215 L705,222 L698,228 L690,232 L682,228 L678,220 L675,212 L675,202 L678,192 L680,185 Z"/>
-            <path d="M692,252 L705,248 L718,250 L728,255 L738,258 L745,262 L740,268 L730,270 L718,268 L705,265 L695,260 Z"/>
-            <path d="M750,258 L762,255 L772,260 L768,268 L758,270 L750,265 Z"/>
-            <path d="M758,195 L762,190 L766,195 L768,205 L765,212 L760,215 L756,210 L755,202 Z"/>
-            <path d="M790,90 L795,85 L800,88 L805,95 L808,105 L805,115 L800,122 L795,128 L790,125 L788,118 L786,110 L785,100 L788,95 Z"/>
-            <path d="M770,110 L775,105 L780,108 L782,115 L780,122 L775,125 L772,120 L770,115 Z"/>
-            <path d="M772,162 L776,158 L780,162 L782,170 L780,178 L776,180 L773,175 L772,168 Z"/>
-            <path d="M750,312 L765,305 L782,300 L800,298 L818,300 L835,305 L848,312 L855,322 L858,332 L856,342 L850,352 L842,360 L832,365 L820,368 L808,370 L795,368 L782,365 L770,358 L762,348 L755,338 L752,328 L750,318 Z"/>
-            <path d="M872,365 L878,358 L882,365 L880,375 L876,382 L870,378 L868,372 Z"/>
-            <path d="M875,385 L880,382 L883,388 L880,395 L876,392 Z"/>
-          </g>
-
-          <g class="location-marker germany-marker">
-            <circle cx="468" cy="80" r="6" fill="rgba(201,169,98,0.5)" stroke="var(--gold)" stroke-width="1.5"/>
-            <circle cx="468" cy="80" r="12" fill="none" stroke="rgba(201,169,98,0.3)" stroke-width="1" class="ping-ring"/>
-            <text x="468" y="68" text-anchor="middle" fill="var(--gold-dark)" font-size="11" font-family="'Playfair Display', serif" font-weight="600">Germany 🇩🇪</text>
-          </g>
-
-          <g class="location-marker china-marker">
-            <circle cx="720" cy="130" r="5" fill="rgba(74,159,219,0.5)" stroke="#4A9FDB" stroke-width="1.5"/>
-            <text x="720" y="118" text-anchor="middle" fill="#2E7DB5" font-size="10" font-family="'Playfair Display', serif" font-weight="600">China 🇨🇳</text>
-          </g>
-
-          <g class="location-marker taiwan-marker">
-            <circle cx="776" cy="170" r="4" fill="rgba(232,154,199,0.5)" stroke="#E89AC7" stroke-width="1.5"/>
-            <text x="792" y="174" text-anchor="start" fill="#D67BA8" font-size="10" font-family="'Playfair Display', serif" font-weight="600">Taiwan 🇹🇼</text>
-          </g>
-
-          <g class="flight-paths" fill="none" stroke-width="1.2" stroke-dasharray="6 4">
-            <path d="M720,130 Q600,30 468,80" stroke="rgba(74,159,219,0.35)" class="flight-path-boy"/>
-            <path d="M776,170 Q630,50 468,80" stroke="rgba(232,154,199,0.35)" class="flight-path-girl"/>
-          </g>
-        </svg>
-
-        <div class="character boy" id="boy-character">
-          <div class="character-icon">
-            <div class="character-head"></div>
-            <div class="character-body"></div>
-          </div>
-          <span class="character-label">李博</span>
-        </div>
-        
-        <div class="character girl" id="girl-character">
-          <div class="character-icon">
-            <div class="character-head"></div>
-            <div class="character-body"></div>
-          </div>
-          <span class="character-label">亚弦</span>
-        </div>
-        
-        <div class="heart-animation" id="heart-animation">
-          <svg class="heart-svg" viewBox="0 0 32 29.6">
-            <path d="M23.6,0c-3.4,0-6.3,2.7-7.6,5.6C14.7,2.7,11.8,0,8.4,0C3.8,0,0,3.8,0,8.4c0,9.4,9.5,11.9,16,21.2c6.1-9.3,16-12.1,16-21.2C32,3.8,28.2,0,23.6,0z"/>
-          </svg>
-          <span class="heart-text">在德国相遇 ♥</span>
-        </div>
-      </div> </div>
-
-    <div class="skip-hint">点击任意处跳过</div>
+  <div class="container">
+    <h1>📈 本益比河流圖</h1>
+    <div class="search-bar">
+      <input type="text" id="stockInput" placeholder="輸入股票代號 (例: 2330)" maxlength="6" />
+      <button id="searchBtn" onclick="queryStock()">查詢</button>
+    </div>
+    <div id="error"></div>
+    <div id="loading">⏳ 正在從證交所取得資料，首次查詢可能需要 30-60 秒...</div>
+    <div class="chart-container">
+      <div class="info-bar" id="infoBar" style="display:none;">
+        <span class="stock-info" id="stockInfo"></span>
+        <span class="eps-info" id="epsInfo"></span>
+        <span class="cache-badge" id="cacheBadge" style="display:none;">快取資料</span>
+      </div>
+      <canvas id="peChart" width="960" height="450"></canvas>
+    </div>
+    <p class="legend-note">色帶由下而上代表 PE 10x → 35x，黑色實線為實際股價走勢</p>
   </div>
 
-  <!-- Fixed Navigation -->
-  <nav class="navbar" id="navbar">
-    <div class="nav-container">
-      <a href="#home" class="nav-logo">李 & 郭</a>
-      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <ul class="nav-menu" id="nav-menu">
-        <li><a href="#home" class="nav-link active">首页</a></li>
-        <li><a href="#about" class="nav-link">关于我们</a></li>
-        <li><a href="#wedding-info" class="nav-link">婚礼资讯</a></li>
-        <li><a href="#attendance" class="nav-link">出席回复</a></li>
-        <li><a href="#rsvp" class="nav-link nav-cta">宾客留言板</a></li>
-      </ul>
-    </div>
-  </nav>
+  <script>
+    // API base URL - change to your Vercel deployment URL
+    const API_BASE = window.location.origin;
 
-  <!-- Hero Section -->
-  <header id="home" class="hero">
-    <div class="hero-overlay"></div>
-    <div class="floral-decoration floral-top-left"></div>
-    <div class="floral-decoration floral-top-right"></div>
-    <div class="floral-decoration floral-bottom-left"></div>
-    <div class="floral-decoration floral-bottom-right"></div>
-    <div class="hero-wrapper">
-      <!-- Left: Names and Info -->
-      <div class="hero-content">
-        <p class="hero-subtitle">We're Getting Married</p>
-        <h1 class="hero-names">李博 <span class="ampersand">&</span> 郭亞弦</h1>
-        <div class="hero-divider">
-          <span class="divider-line"></span>
-          <span class="divider-heart">♥</span>
-          <span class="divider-line"></span>
-        </div>
-        <p class="hero-date">May 06, 2026</p>
-        <p class="hero-venue">地点 大同云冈大酒店</p>
-        <!-- <a class="hero-cta" href="#rsvp">RSVP Now</a> -->
-      </div>
-      <!-- Right: Arched Image -->
-      <div class="hero-image-side">
-        <div class="hero-arch-image">
-          <img src="assets/137422.jpg" alt="李博 & 郭亞弦">
-        </div>
-      </div>
-    </div>
-    <div class="scroll-indicator">
-      <span></span>
-    </div>
-  </header>
+    let chartInstance = null;
 
-  <main class="main-content">
-    <!-- About Section -->
-    <section id="about" class="section about-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">关于我们</h2>
-          <p class="section-subtitle">Our Love Story</p>
-        </div>
-        <div class="about-content">
-          <div class="about-image">
-            <img src="assets/hero.jpg" alt="李博 & 郭亞弦">
-          </div>
-          <div class="about-text">
-            <h3>我们的故事</h3>
-            <p>我们在一个温暖的春日相遇，从那一刻起，我们就知道这是命中注定的缘分。经过多年的相知相守，我们决定携手步入婚姻的殿堂。</p>
-            <p>感谢您一直以来的支持与祝福，我们诚挚地邀请您来见证这个特别的时刻。</p>
-            <div class="about-signature">
-              <span>李博 & 郭亞弦</span>
-            </div>
-          </div>
-        </div>
+    // Allow Enter key to trigger search
+    document.getElementById('stockInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') queryStock();
+    });
 
-        <!-- Our Journey Timeline -->
-        <div class="journey-wrapper">
-          <h3 class="journey-title">我们的旅程</h3>
-          <div class="journey-timeline">
-            <!-- Left Person -->
-            <div class="journey-person journey-left">
-              <div class="journey-photo">
-                <img src="assets/clara-child.jpg" alt="郭亞弦小时候">
-              </div>
-              <p class="journey-name">郭亞弦</p>
-            </div>
-            
-            <!-- Timeline -->
-            <div class="journey-line">
-              <div class="timeline-path">
-                <svg viewBox="0 0 200 300" preserveAspectRatio="none">
-                  <path class="line-left" d="M 30 0 Q 30 150, 100 150" fill="none" stroke="url(#goldGradient)" stroke-width="3"/>
-                  <path class="line-right" d="M 170 0 Q 170 150, 100 150" fill="none" stroke="url(#roseGradient)" stroke-width="3"/>
-                  <path class="line-together" d="M 100 150 L 100 300" fill="none" stroke="url(#togetherGradient)" stroke-width="3"/>
-                  <defs>
-                    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#C9A962"/>
-                      <stop offset="100%" stop-color="#D4A5A5"/>
-                    </linearGradient>
-                    <linearGradient id="roseGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#D4A5A5"/>
-                      <stop offset="100%" stop-color="#C9A962"/>
-                    </linearGradient>
-                    <linearGradient id="togetherGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#D4A5A5"/>
-                      <stop offset="100%" stop-color="#B8898A"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-              <div class="timeline-meeting-point">
-                <span class="meeting-year">2024</span>
-                <span class="meeting-heart">♥</span>
-              </div>
-            </div>
-            
-            <!-- Right Person -->
-            <div class="journey-person journey-right">
-              <div class="journey-photo">
-                <img src="assets/libo-child.jpg" alt="李博小时候">
-              </div>
-              <p class="journey-name">李博</p>
-            </div>
-          </div>
-          <p class="journey-caption">从陌生到相识，从相识到相爱，我们的故事在 2024 年交汇</p>
+    async function queryStock() {
+      const input = document.getElementById('stockInput');
+      const btn = document.getElementById('searchBtn');
+      const loading = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      const infoBar = document.getElementById('infoBar');
 
-          <!-- Journey Story Cards -->
-          <div class="journey-stories">
-            <div class="journey-story-card">
-              <div class="journey-story-image">
-                <img src="assets/story1.jpg" alt="初次相遇">
-              </div>
-              <div class="journey-story-text">
-                <h4 class="journey-story-title">初次相遇</h4>
-                <p>在德国的一个温暖午后，命运安排了我们的第一次相遇。那天的阳光特别灿烂，就像我们彼此眼中闪烁的光芒。从那一刻起，世界变得不一样了。</p>
-              </div>
-            </div>
+      const stockNo = input.value.trim();
+      if (!stockNo || !/^\d{4,6}$/.test(stockNo)) {
+        showError('請輸入有效的股票代號（4-6 位數字）');
+        return;
+      }
 
-            <div class="journey-story-card reverse">
-              <div class="journey-story-image">
-                <img src="assets/story2.jpg" alt="恋爱时光">
-              </div>
-              <div class="journey-story-text">
-                <h4 class="journey-story-title">恋爱时光</h4>
-                <p>一起走过欧洲的大街小巷，一起品尝异国美食，一起在星空下许愿。每一个平凡的日子，因为有你在身边，都变成了最珍贵的回忆。</p>
-              </div>
-            </div>
+      // Reset UI
+      errorDiv.classList.remove('show');
+      loading.classList.add('show');
+      btn.disabled = true;
+      infoBar.style.display = 'none';
 
-            <div class="journey-story-card">
-              <div class="journey-story-image">
-                <img src="assets/story3.jpg" alt="携手未来">
-              </div>
-              <div class="journey-story-text">
-                <h4 class="journey-story-title">携手未来</h4>
-                <p>你愿意和我一起走下去吗？当这句话说出口的那一刻，泪水与笑容交织在一起。我们决定携手，共同书写属于我们的幸福篇章。</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+      try {
+        const res = await fetch(`${API_BASE}/api/getPeRiver?stock=${encodeURIComponent(stockNo)}`);
+        const data = await res.json();
 
-    <!-- Wedding Info Section -->
-    <section id="wedding-info" class="section wedding-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">婚礼资讯</h2>
-          <p class="section-subtitle">Wedding Details</p>
-        </div>
+        if (!res.ok) {
+          showError(data.error || '查詢失敗');
+          return;
+        }
 
-        <!-- Countdown Timer -->
-        <div class="countdown-wrapper">
-          <h3 class="countdown-title">距离我们的大日子还有</h3>
-          <div class="countdown" id="countdown">
-            <div class="countdown-item">
-              <span class="countdown-number" id="days">000</span>
-              <span class="countdown-label">天</span>
-            </div>
-            <div class="countdown-separator">:</div>
-            <div class="countdown-item">
-              <span class="countdown-number" id="hours">00</span>
-              <span class="countdown-label">时</span>
-            </div>
-            <div class="countdown-separator">:</div>
-            <div class="countdown-item">
-              <span class="countdown-number" id="minutes">00</span>
-              <span class="countdown-label">分</span>
-            </div>
-            <div class="countdown-separator">:</div>
-            <div class="countdown-item">
-              <span class="countdown-number" id="seconds">00</span>
-              <span class="countdown-label">秒</span>
-            </div>
-          </div>
-        </div>
+        renderChart(data);
+      } catch (err) {
+        showError('網路錯誤，請確認 API 是否正常運作: ' + err.message);
+      } finally {
+        loading.classList.remove('show');
+        btn.disabled = false;
+      }
+    }
 
-        <!-- Info Cards -->
-        <div class="info-cards">
-          <div class="info-card">
-            <div class="info-icon">📍</div>
-            <h3>地点</h3>
-            <p><strong>大同云冈大酒店</strong></p>
-            <p>大同, 平城区, 恒安街与永和路交汇处东南角, </p>
-          </div>
-          <div class="info-card">
-            <div class="info-icon">📅</div>
-            <h3>日期</h3>
-            <p><strong>2026年5月6日</strong></p>
-            <p>星期三</p>
-          </div>
-          <div class="info-card">
-            <div class="info-icon">⏰</div>
-            <h3>时间</h3>
-            <p><strong>中午 12:00</strong></p>
-            <p>请提前抵达</p>
-          </div>
-          <div class="info-card">
-            <div class="info-icon">🎊</div>
-            <h3>请携带</h3>
-            <p><strong>一份好心情</strong></p>
-            <p>期待与您共享喜悦</p>
-          </div>
-        </div>
+    function showError(msg) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = msg;
+      errorDiv.classList.add('show');
+      document.getElementById('loading').classList.remove('show');
+      document.getElementById('searchBtn').disabled = false;
+    }
 
-        <!-- Schedule -->
-        <div class="schedule-section">
-          <h3 class="schedule-title">活动流程</h3>
-          <div class="timeline">
-            <div class="timeline-item">
-              <div class="timeline-time">12:00 PM</div>
-              <div class="timeline-content">
-                <h4>宾客入场</h4>
-                <p>欢迎莅临，请享用迎宾饮品</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-time">12:30 PM</div>
-              <div class="timeline-content">
-                <h4>婚礼仪式</h4>
-                <p>见证我们的爱情誓言</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-time">1:00 PM</div>
-              <div class="timeline-content">
-                <h4>午宴时光</h4>
-                <p>轻松交流，享用美食佳肴</p>
-              </div>
-            </div>
-            <div class="timeline-item">
-              <div class="timeline-time">2:30 PM</div>
-              <div class="timeline-content">
-                <h4>祝福交流</h4>
-                <p>欢乐祝福，共享喜悦</p>
-              </div>
-            </div>
-          </div>
-        </div>
+    function renderChart(data) {
+      const infoBar = document.getElementById('infoBar');
+      const stockInfo = document.getElementById('stockInfo');
+      const epsInfo = document.getElementById('epsInfo');
+      const cacheBadge = document.getElementById('cacheBadge');
 
-        <!-- Photo Album Slideshow -->
-        <div class="album-section">
-          <div class="album-header">
-            <p class="album-script">Our Love Story</p>
-            <p class="album-subtitle">Forever Moments</p>
-            <div class="album-header-divider">
-              <span class="divider-line"></span>
-              <span class="divider-heart">♥</span>
-              <span class="divider-line"></span>
-            </div>
-          </div>
-          <div class="album-slideshow" id="album-slideshow">
-            <div class="album-track" id="album-track"></div>
-            <button class="album-btn album-prev" id="album-prev" aria-label="上一张">&#10094;</button>
-            <button class="album-btn album-next" id="album-next" aria-label="下一张">&#10095;</button>
-            <div class="album-counter" id="album-counter"></div>
-            <div class="album-dots" id="album-dots"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <!--賓客回復-->
-    <!-- Attendance RSVP Section -->
-    <section id="attendance" class="section attendance-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">出席回复</h2>
-          <p class="section-subtitle">RSVP</p>
-        </div>
+      // Show info bar
+      infoBar.style.display = 'flex';
+      stockInfo.textContent = `股票代號: ${data.stockNo}`;
+      epsInfo.textContent = `近四季 EPS: ${data.latestEPS} 元`;
+      cacheBadge.style.display = data.cached ? 'inline' : 'none';
 
-        <div class="attendance-grid">
-          <div class="attendance-panel attendance-single">
-            <h3 class="attendance-form-title">请告诉我们您是否出席</h3>
-            <form id="attendance-form" class="attendance-form" novalidate>
-              <div class="form-group">
-                <label for="att-name">您的名字</label>
-                <input id="att-name" name="attName" type="text" maxlength="24" placeholder="例如：小美" required>
-              </div>
-              <div class="form-group">
-                <label for="att-attending">是否参加？</label>
-                <select id="att-attending" name="attAttending" required>
-                  <option value="" disabled selected>请选择</option>
-                  <option value="yes">是的，我会参加 🎉</option>
-                  <option value="no">很遗憾，无法参加</option>
-                </select>
-              </div>
-              <div class="form-group att-guest-count-group" id="att-guest-count-group" style="display:none;">
-                <label for="att-guest-count">参加人数（包含您自己）</label>
-                <input id="att-guest-count" name="attGuestCount" type="number" min="1" max="20" value="1" placeholder="1">
-              </div>
-              <button type="submit" class="btn-submit">送出回复</button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </section>
+      // Prepare chart data
+      const labels = data.priceData.map((p) => p.date);
+      const priceValues = data.priceData.map((p) => p.close);
 
-    <!-- Guestbook / RSVP Section -->
-    <section id="rsvp" class="section guestbook-section">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">宾客留言板</h2>
-          <p class="section-subtitle">Leave Your Blessings</p>
-        </div>
+      // PE band colors (bottom to top: green → yellow → orange → red)
+      const bandColors = [
+        'rgba(76, 175, 80, 0.3)',   // PE 10 - green (undervalued)
+        'rgba(139, 195, 74, 0.3)',  // PE 15 - light green
+        'rgba(255, 235, 59, 0.3)',  // PE 20 - yellow
+        'rgba(255, 152, 0, 0.3)',   // PE 25 - orange
+        'rgba(244, 67, 54, 0.3)',   // PE 30 - red
+        'rgba(156, 39, 176, 0.2)',  // PE 35 - purple (overvalued)
+      ];
 
-        <div class="guestbook-grid">
-          <div class="guestbook-panel">
-            <h3 class="guestbook-form-title">写下你的祝福</h3>
-            <form id="guestbook-form" class="guestbook-form" novalidate>
-              <div class="form-group">
-                <label for="guest-name">您的名字</label>
-                <input id="guest-name" name="guestName" type="text" maxlength="24" placeholder="例如：小美" required>
-              </div>
-              <div class="form-group">
-                <label for="guest-message">给新人的话</label>
-                <textarea id="guest-message" name="guestMessage" rows="5" maxlength="180" placeholder="写下您的祝福..." required></textarea>
-              </div>
-              <button type="submit" class="btn-submit">送出祝福</button>
-            </form>
-            <!-- <p class="guestbook-note">留言会写入云端共享数据，并可导出为同一份 <code>guestbook.txt</code>。</p>
-            <button type="button" id="download-guestbook" class="guestbook-download">下载留言 txt</button> -->
-          </div>
+      const borderColors = [
+        'rgba(76, 175, 80, 0.8)',
+        'rgba(139, 195, 74, 0.8)',
+        'rgba(255, 235, 59, 0.8)',
+        'rgba(255, 152, 0, 0.8)',
+        'rgba(244, 67, 54, 0.8)',
+        'rgba(156, 39, 176, 0.6)',
+      ];
 
-          <div class="guestbook-panel romantic-board-wrap">
-            <h3 class="guestbook-form-title">浪漫祝福看板</h3>
-            <div class="romantic-board" id="romantic-board">
-              <div class="board-ornament board-ornament-left">✦</div>
-              <div class="board-ornament board-ornament-right">✦</div>
-              <div id="blessings-list" class="blessings-list"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+      // Build datasets
+      const datasets = data.peRiverBands.map((band, idx) => ({
+        label: band.label,
+        data: band.values.map((v) => v.value),
+        borderColor: borderColors[idx],
+        backgroundColor: bandColors[idx],
+        borderWidth: 1,
+        fill: idx === 0 ? 'origin' : '-1',
+        pointRadius: 0,
+        tension: 0.3,
+        order: data.peRiverBands.length - idx, // Draw lower bands first
+      }));
 
-    
-  </main>
+      // Add actual stock price line
+      datasets.push({
+        label: '實際股價',
+        data: priceValues,
+        borderColor: '#000',
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: false,
+        order: 0, // Draw on top
+      });
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-content">
-      <div class="footer-names">Li Bo & Kuo YaHsien</div>
-      <p class="footer-date">May 6, 2026</p>
-      <p class="footer-message">We can't wait to celebrate with you 💕</p>
-    </div>
-  </footer>
+      // Destroy previous chart
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
 
-  <!-- Falling Petals Container -->
-  <div id="petals-container" class="petals-container" aria-hidden="true"></div>
-
-  <script src="assets/album/manifest.js"></script>
-  <script src="js_main.js"></script>
+      const ctx = document.getElementById('peChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { usePointStyle: true, padding: 15 },
+            },
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  return `${context.dataset.label}: ${context.parsed.y?.toFixed(1)} 元`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              title: { display: true, text: '月份' },
+              ticks: { maxTicksLimit: 12 },
+            },
+            y: {
+              title: { display: true, text: '股價 (TWD)' },
+              beginAtZero: false,
+            },
+          },
+        },
+      });
+    }
+  </script>
 </body>
 </html>
