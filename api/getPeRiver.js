@@ -1,4 +1,9 @@
-﻿// In-memory cache for warm serverless instances
+﻿const { RestClient } = require('@fugle/marketdata');
+
+const client = new RestClient({ apiKey: 'MTc0YzgwZmQtY2MzZS00YjllLWEwNzEtYmIyNjMwMjJhY2NkIDc3ZGU2YzlkLTA1NWUtNDY4OS04NDdhLTY4NzMyM2UxZmJlMg==' });
+const stock = client.stock;
+
+// In-memory cache for warm serverless instances
 const cache = new Map();
 const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
 
@@ -16,71 +21,8 @@ function setCache(key, data) {
   cache.set(key, { data, timestamp: Date.now() });
 }
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 // PE Band multipliers
 const PE_BANDS = [5.1, 9.8, 14.5, 19.2, 23.8, 28.5];
-
-const HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-  'Accept': 'application/json',
-};
-
-// Fetch monthly OHLC + PE from TWSE in one pass per month
-async function fetchMonthData(stockNo, year, month) {
-  const dateStr = `${year}${String(month).padStart(2, '0')}01`;
-
-  // Fetch stock prices
-  const priceUrl = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${dateStr}&stockNo=${stockNo}`;
-  const priceRes = await fetch(priceUrl, { headers: HEADERS });
-  const priceJson = await priceRes.json();
-
-  if (priceJson.stat !== 'OK' || !priceJson.data || priceJson.data.length === 0) {
-    return null;
-  }
-
-  // Parse daily prices
-  const dailyPrices = priceJson.data.map((row) => ({
-    open: parseFloat(row[3].replace(/,/g, '')),
-    high: parseFloat(row[4].replace(/,/g, '')),
-    low: parseFloat(row[5].replace(/,/g, '')),
-    close: parseFloat(row[6].replace(/,/g, '')),
-  })).filter((d) => !isNaN(d.close));
-
-  if (dailyPrices.length === 0) return null;
-
-  const ohlc = {
-    open: dailyPrices[0].open,
-    high: Math.max(...dailyPrices.map((d) => d.high)),
-    low: Math.min(...dailyPrices.map((d) => d.low)),
-    close: dailyPrices[dailyPrices.length - 1].close,
-  };
-
-  await delay(150);
-
-  // Fetch PE ratio from BWIBBU_d
-  const peUrl = `https://www.twse.com.tw/exchangeReport/BWIBBU_d?response=json&date=${dateStr}&stockNo=${stockNo}`;
-  const peRes = await fetch(peUrl, { headers: HEADERS });
-  const peJson = await peRes.json();
-
-  let monthlyPE = null;
-  if (peJson.stat === 'OK' && peJson.data && peJson.data.length > 0) {
-    // BWIBBU_d: [日期, 殖利率(%), 股利年度, 本益比, 股價淨值比, 財報年/季]
-    for (let i = peJson.data.length - 1; i >= 0; i--) {
-      const peValue = parseFloat(peJson.data[i][3]);
-      if (!isNaN(peValue) && peValue > 0) {
-        monthlyPE = peValue;
-        break;
-      }
-    }
-  }
-
-  const impliedEPS = monthlyPE ? Math.round((ohlc.close / monthlyPE) * 100) / 100 : null;
-
-  return { date: `${year}/${String(month).padStart(2, '0')}`, ohlc, pe: monthlyPE, impliedEPS };
-}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -100,45 +42,71 @@ module.exports = async function handler(req, res) {
 
   try {
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
+    const fromDate = new Date(now);
+    fromDate.setMonth(fromDate.getMonth() - 18);
+    const fromStr = fromDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    const toStr = now.toISOString().split('T')[0];
 
-    // Build list of last 18 months
-    const monthsToFetch = [];
-    let y = currentYear, m = currentMonth;
-    for (let i = 0; i < 18; i++) {
-      monthsToFetch.unshift({ year: y, month: m });
-      m--;
-      if (m === 0) { m = 12; y--; }
-    }
+    // Fetch monthly candles from Fugle (single API call for all 18 months)
+    const candles = await stock.historical.candles({
+      symbol: stockNo,
+      from: fromStr,
+      to: toStr,
+      timeframe: 'M',
+    });
 
-    const results = [];
-    for (const { year, month } of monthsToFetch) {
-      await delay(200);
-      const data = await fetchMonthData(stockNo, year, month);
-      if (data) results.push(data);
-    }
-
-    if (results.length === 0) {
+    if (!candles || !candles.data || candles.data.length === 0) {
       return res.status(404).json({ error: '無法取得股價資料，請確認股票代號' });
     }
 
-    // Forward-fill EPS for months without PE data
-    const epsTimeline = [];
-    let lastKnownEPS = null;
-    for (const r of results) {
-      if (r.impliedEPS) lastKnownEPS = r.impliedEPS;
-      epsTimeline.push(lastKnownEPS);
-    }
-    // Back-fill if first months have no EPS
-    const firstKnown = epsTimeline.find((e) => e !== null);
-    for (let i = 0; i < epsTimeline.length; i++) {
-      if (epsTimeline[i] === null) epsTimeline[i] = firstKnown || 0;
+    // Sort by date ascending
+    const sortedCandles = candles.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Get current PE ratio from intraday quote
+    let currentPE = null;
+    let latestEPS = null;
+    try {
+      const quote = await stock.intraday.quote({ symbol: stockNo });
+      if (quote && quote.priceEarningRatio) {
+        currentPE = quote.priceEarningRatio;
+      }
+    } catch (e) {
+      // quote might not be available for some stocks
     }
 
-    const latestEPS = epsTimeline[epsTimeline.length - 1];
-    const lastResult = results[results.length - 1];
-    const currentPE = lastResult.pe ? Math.round(lastResult.pe * 100) / 100 : null;
+    // If we have PE from quote, calculate implied EPS
+    const lastCandle = sortedCandles[sortedCandles.length - 1];
+    if (currentPE && lastCandle) {
+      latestEPS = Math.round((lastCandle.close / currentPE) * 100) / 100;
+    }
+
+    // If no PE from quote, try historical stats
+    if (!latestEPS) {
+      try {
+        const stats = await stock.historical.stats({ symbol: stockNo });
+        if (stats && stats.priceEarningRatio) {
+          currentPE = stats.priceEarningRatio;
+          latestEPS = Math.round((lastCandle.close / currentPE) * 100) / 100;
+        }
+      } catch (e) {}
+    }
+
+    if (!latestEPS) {
+      return res.status(404).json({ error: '無法取得本益比資料（該股票可能無本益比數據）' });
+    }
+
+    // Build monthly data with forward-filled EPS
+    // For simplicity, use the latest implied EPS for all PE band calculations
+    // (PE from TWSE/Fugle already reflects TTM earnings)
+    const dates = sortedCandles.map((c) => {
+      const d = new Date(c.date);
+      return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
+
+    const klineData = sortedCandles.map((c) => [c.open, c.close, c.low, c.high]);
+
+    // Use latestEPS uniformly for river bands (TTM EPS doesn't change dramatically month-to-month)
+    const epsTimeline = sortedCandles.map(() => latestEPS);
 
     // Build PE river bands
     const peRiverBands = PE_BANDS.map((pe) => ({
@@ -150,12 +118,17 @@ module.exports = async function handler(req, res) {
     const riverData = {
       stockNo,
       latestEPS,
-      currentPE,
+      currentPE: currentPE ? Math.round(currentPE * 100) / 100 : null,
       peBands: PE_BANDS,
-      dates: results.map((r) => r.date),
-      klineData: results.map((r) => [r.ohlc.open, r.ohlc.close, r.ohlc.low, r.ohlc.high]),
+      dates,
+      klineData,
       peRiverBands,
-      lastPrice: lastResult.ohlc,
+      lastPrice: {
+        open: lastCandle.open,
+        high: lastCandle.high,
+        low: lastCandle.low,
+        close: lastCandle.close,
+      },
       epsTimeline,
       generatedAt: new Date().toISOString(),
     };

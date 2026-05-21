@@ -5,5 +5,8 @@
   "description": "本益比河流圖 - PE River Chart with Vercel Serverless Functions",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@fugle/marketdata": "^1.0.0"
   }
 }
