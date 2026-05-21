@@ -21,7 +21,10 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Fetch monthly stock prices from TWSE
+// PE Band multipliers
+const PE_BANDS = [5.1, 9.8, 14.5, 19.2, 23.8, 28.5];
+
+// Fetch monthly stock prices from TWSE - returns OHLC data
 async function fetchMonthlyPrices(stockNo, year, month) {
   const dateStr = `${year}${String(month).padStart(2, '0')}01`;
   const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${dateStr}&stockNo=${stockNo}`;
@@ -36,8 +39,22 @@ async function fetchMonthlyPrices(stockNo, year, month) {
   // Each row: [日期, 成交股數, 成交金額, 開盤價, 最高價, 最低價, 收盤價, 漲跌價差, 成交筆數]
   return json.data.map((row) => ({
     date: row[0], // 民國年/月/日
+    open: parseFloat(row[3].replace(/,/g, '')),
+    high: parseFloat(row[4].replace(/,/g, '')),
+    low: parseFloat(row[5].replace(/,/g, '')),
     close: parseFloat(row[6].replace(/,/g, '')),
   }));
+}
+
+// Aggregate daily OHLC into monthly OHLC (one candlestick per month)
+function aggregateMonthlyOHLC(dailyData) {
+  if (dailyData.length === 0) return null;
+  return {
+    open: dailyData[0].open,
+    high: Math.max(...dailyData.map((d) => d.high)),
+    low: Math.min(...dailyData.map((d) => d.low)),
+    close: dailyData[dailyData.length - 1].close,
+  };
 }
 
 // Fetch EPS from MOPS (公開資訊觀測站) - quarterly financial data
@@ -107,12 +124,12 @@ module.exports = async function handler(req, res) {
     const currentMonth = now.getMonth() + 1;
     const rocYear = currentYear - 1911; // 民國年
 
-    // Fetch quarterly EPS for last 3 years (12 quarters)
+    // Fetch quarterly EPS for last 3 years (12+ quarters for trailing calc)
     const quarterlyData = [];
     for (let y = rocYear - 3; y <= rocYear; y++) {
       const maxSeason = y === rocYear ? Math.min(Math.floor((currentMonth - 1) / 3), 4) : 4;
       for (let s = 1; s <= maxSeason; s++) {
-        await delay(300); // Avoid rate limiting
+        await delay(350); // Avoid rate limiting
         const eps = await fetchQuarterlyEPS(stockNo, y, s);
         quarterlyData.push({ year: y, season: s, eps: eps || 0 });
       }
@@ -124,59 +141,69 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ error: '無法取得足夠的 EPS 資料' });
     }
 
-    // Fetch monthly stock prices for last 3 years
+    // Fetch monthly stock prices (OHLC) for last 3 years
     const priceData = [];
     for (let y = currentYear - 2; y <= currentYear; y++) {
       const maxMonth = y === currentYear ? currentMonth : 12;
       for (let m = 1; m <= maxMonth; m++) {
-        await delay(300);
-        const prices = await fetchMonthlyPrices(stockNo, y, m);
-        if (prices.length > 0) {
-          // Take month-end closing price
-          const lastDay = prices[prices.length - 1];
+        await delay(350);
+        const dailyPrices = await fetchMonthlyPrices(stockNo, y, m);
+        if (dailyPrices.length > 0) {
+          const ohlc = aggregateMonthlyOHLC(dailyPrices);
           priceData.push({
-            date: `${y}-${String(m).padStart(2, '0')}`,
-            close: lastDay.close,
+            date: `${y}/${String(m).padStart(2, '0')}`,
+            open: ohlc.open,
+            high: ohlc.high,
+            low: ohlc.low,
+            close: ohlc.close,
           });
         }
       }
     }
 
-    // Map trailing EPS to each month's price point
-    // Use the most recent trailing EPS available at each price point
-    const latestEPS = trailingEPSData[trailingEPSData.length - 1]?.trailingEPS || 0;
+    // Helper: find trailing EPS for a given date
+    function getEPSForDate(dateStr) {
+      const parts = dateStr.split('/');
+      const priceYear = parseInt(parts[0]);
+      const priceMonth = parseInt(parts[1]);
+      const rocPriceYear = priceYear - 1911;
+      const priceSeason = Math.ceil(priceMonth / 3);
+      let matchedEPS = trailingEPSData[trailingEPSData.length - 1].trailingEPS;
+      for (let i = trailingEPSData.length - 1; i >= 0; i--) {
+        const d = trailingEPSData[i];
+        if (d.year < rocPriceYear || (d.year === rocPriceYear && d.season <= priceSeason)) {
+          matchedEPS = d.trailingEPS;
+          break;
+        }
+      }
+      return matchedEPS;
+    }
 
-    // Build PE river data
-    const peMultiples = [10, 15, 20, 25, 30, 35];
+    const latestEPS = trailingEPSData[trailingEPSData.length - 1]?.trailingEPS || 0;
+    const lastPrice = priceData.length > 0 ? priceData[priceData.length - 1] : null;
+    const currentPE = lastPrice ? Math.round((lastPrice.close / latestEPS) * 100) / 100 : null;
+
+    // Build PE river bands data
+    const peRiverBands = PE_BANDS.map((pe) => ({
+      peRatio: pe,
+      label: `${pe}倍`,
+      values: priceData.map((p) => {
+        const eps = getEPSForDate(p.date);
+        return Math.round(eps * pe * 100) / 100;
+      }),
+    }));
+
+    // Build response
     const riverData = {
       stockNo,
       latestEPS,
+      currentPE,
+      peBands: PE_BANDS,
       trailingEPSHistory: trailingEPSData,
-      priceData,
-      peRiverBands: peMultiples.map((pe) => ({
-        peRatio: pe,
-        label: `PE ${pe}`,
-        values: priceData.map((p) => {
-          // Find the matching EPS for this time period
-          const priceYear = parseInt(p.date.split('-')[0]);
-          const priceMonth = parseInt(p.date.split('-')[1]);
-          const rocPriceYear = priceYear - 1911;
-          const priceSeason = Math.ceil(priceMonth / 3);
-          // Find closest trailing EPS
-          let matchedEPS = latestEPS;
-          for (let i = trailingEPSData.length - 1; i >= 0; i--) {
-            const d = trailingEPSData[i];
-            if (d.year < rocPriceYear || (d.year === rocPriceYear && d.season <= priceSeason)) {
-              matchedEPS = d.trailingEPS;
-              break;
-            }
-          }
-          return {
-            date: p.date,
-            value: Math.round(matchedEPS * pe * 100) / 100,
-          };
-        }),
-      })),
+      dates: priceData.map((p) => p.date),
+      klineData: priceData.map((p) => [p.open, p.close, p.low, p.high]), // ECharts candlestick format
+      peRiverBands,
+      lastPrice: lastPrice ? { open: lastPrice.open, high: lastPrice.high, low: lastPrice.low, close: lastPrice.close } : null,
       generatedAt: new Date().toISOString(),
     };
 
