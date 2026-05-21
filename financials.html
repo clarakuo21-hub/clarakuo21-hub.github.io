@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>財報視覺化 - 台股分析平台</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <style>
+    .tab-bar { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab-bar button {
+      padding: 8px 18px; font-size: 13px; background: #2a2a3e; color: #ccc;
+      border: 1px solid #444; border-radius: 6px; cursor: pointer;
+    }
+    .tab-bar button:hover { background: #3a3a5e; color: #fff; }
+    .tab-bar button.active { background: #4361ee; color: #fff; border-color: #4361ee; }
+    .chart-panel { width: 100%; height: 420px; margin-bottom: 20px; }
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+    .sub-title { font-size: 14px; color: #aaa; margin-bottom: 6px; padding-left: 4px; }
+  </style>
+</head>
+<body>
+  <script src="js/nav.js"></script>
+  <div class="page-container">
+    <div class="error-msg" id="error"></div>
+    <div class="loading" id="loading">⏳ 載入中...</div>
+
+    <div class="card" id="mainCard" style="display:none;">
+      <div class="tab-bar" id="tabBar">
+        <button data-type="revenue" class="active">月營收</button>
+        <button data-type="income">損益表</button>
+        <button data-type="balance">資產負債</button>
+        <button data-type="cashflow">現金流量</button>
+      </div>
+      <div id="chartArea"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let charts = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const stock = NavUtil.getStock();
+      if (stock) loadData(stock, 'revenue');
+    });
+
+    document.getElementById('tabBar').addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      document.querySelectorAll('#tabBar button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const stock = NavUtil.getStock();
+      if (stock) loadData(stock, btn.dataset.type);
+    });
+
+    async function loadData(stock, type) {
+      const loading = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      const mainCard = document.getElementById('mainCard');
+
+      errorDiv.classList.remove('show');
+      loading.classList.add('show');
+      mainCard.style.display = 'none';
+      disposeCharts();
+
+      try {
+        const res = await fetch(`${API_BASE}/api/getFinancials?stock=${stock}&type=${type}`);
+        const data = await res.json();
+        if (!res.ok) { showError(data.error || '查詢失敗'); return; }
+        mainCard.style.display = 'block';
+        renderType(type, data);
+      } catch (err) {
+        showError('網路錯誤: ' + err.message);
+      } finally {
+        loading.classList.remove('show');
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.classList.add('show');
+      document.getElementById('loading').classList.remove('show');
+    }
+
+    function disposeCharts() {
+      charts.forEach(c => c.dispose());
+      charts = [];
+    }
+
+    function createChart(container, height) {
+      const div = document.createElement('div');
+      div.style.width = '100%';
+      div.style.height = height || '400px';
+      container.appendChild(div);
+      const c = echarts.init(div, 'dark');
+      charts.push(c);
+      window.addEventListener('resize', () => c.resize());
+      return c;
+    }
+
+    function renderType(type, data) {
+      const area = document.getElementById('chartArea');
+      area.innerHTML = '';
+
+      switch (type) {
+        case 'revenue': renderRevenue(area, data); break;
+        case 'income': renderIncome(area, data); break;
+        case 'balance': renderBalance(area, data); break;
+        case 'cashflow': renderCashflow(area, data); break;
+      }
+    }
+
+    // ===== Monthly Revenue =====
+    function renderRevenue(area, data) {
+      // Revenue bar + YoY line
+      const chart = createChart(area, '420px');
+      chart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: 'rgba(20,20,40,0.95)', borderColor: '#555', textStyle: { color: '#ddd' } },
+        legend: { data: ['月營收', 'YoY%', 'MoM%'], textStyle: { color: '#aaa' }, top: 5 },
+        grid: { left: '6%', right: '6%', top: '15%', bottom: '12%' },
+        xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#888', fontSize: 10, rotate: 45 }, axisLine: { lineStyle: { color: '#444' } } },
+        yAxis: [
+          { type: 'value', name: `營收(${data.unit})`, axisLabel: { color: '#aaa' }, splitLine: { lineStyle: { color: '#1e2a4a' } } },
+          { type: 'value', name: '成長率(%)', position: 'right', axisLabel: { color: '#aaa' }, splitLine: { show: false } }
+        ],
+        series: [
+          {
+            name: '月營收', type: 'bar', data: data.monthlyRevenue, barMaxWidth: 20,
+            itemStyle: { color: 'rgba(67,97,238,0.7)' }
+          },
+          {
+            name: 'YoY%', type: 'line', yAxisIndex: 1, data: data.yoyGrowth,
+            symbol: 'none', lineStyle: { width: 2, color: '#ef5350' }, smooth: true
+          },
+          {
+            name: 'MoM%', type: 'line', yAxisIndex: 1, data: data.momGrowth,
+            symbol: 'none', lineStyle: { width: 1.5, color: '#66bb6a', type: 'dashed' }, smooth: true
+          }
+        ]
+      });
+    }
+
+    // ===== Income Statement =====
+    function renderIncome(area, data) {
+      // Top: Revenue + Operating Income + Net Income bars
+      const title1 = document.createElement('p');
+      title1.className = 'sub-title';
+      title1.textContent = '▸ 營收 / 營業利益 / 淨利（季）';
+      area.appendChild(title1);
+
+      const c1 = createChart(area, '350px');
+      c1.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(20,20,40,0.95)', borderColor: '#555', textStyle: { color: '#ddd' } },
+        legend: { data: ['營收', '營業利益', '淨利', 'EPS'], textStyle: { color: '#aaa' }, top: 5 },
+        grid: { left: '6%', right: '8%', top: '15%', bottom: '12%' },
+        xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#888', fontSize: 10, rotate: 30 }, axisLine: { lineStyle: { color: '#444' } } },
+        yAxis: [
+          { type: 'value', name: '金額', axisLabel: { color: '#aaa' }, splitLine: { lineStyle: { color: '#1e2a4a' } } },
+          { type: 'value', name: 'EPS(元)', position: 'right', axisLabel: { color: '#ffeb3b' }, splitLine: { show: false } }
+        ],
+        series: [
+          { name: '營收', type: 'bar', data: data.revenue, barMaxWidth: 16, itemStyle: { color: 'rgba(67,97,238,0.6)' } },
+          { name: '營業利益', type: 'bar', data: data.operatingIncome, barMaxWidth: 16, itemStyle: { color: 'rgba(102,187,106,0.6)' } },
+          { name: '淨利', type: 'bar', data: data.netIncome, barMaxWidth: 16, itemStyle: { color: 'rgba(255,183,77,0.6)' } },
+          { name: 'EPS', type: 'line', yAxisIndex: 1, data: data.eps, symbol: 'circle', symbolSize: 5, lineStyle: { width: 2, color: '#ffeb3b' }, itemStyle: { color: '#ffeb3b' } }
+        ]
+      });
+
+      // Bottom: Margins
+      const title2 = document.createElement('p');
+      title2.className = 'sub-title';
+      title2.textContent = '▸ 毛利率 / 營業利益率 / 淨利率（季）';
+      area.appendChild(title2);
+
+      const c2 = createChart(area, '280px');
+      c2.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(20,20,40,0.95)', borderColor: '#555', textStyle: { color: '#ddd' } },
+        legend: { data: ['毛利率', '營業利益率', '淨利率'], textStyle: { color: '#aaa' }, top: 5 },
+        grid: { left: '6%', right: '4%', top: '15%', bottom: '12%' },
+        xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#888', fontSize: 10, rotate: 30 }, axisLine: { lineStyle: { color: '#444' } } },
+        yAxis: { type: 'value', name: '%', axisLabel: { color: '#aaa' }, splitLine: { lineStyle: { color: '#1e2a4a' } } },
+        series: [
+          { name: '毛利率', type: 'line', data: data.grossMargin, symbol: 'circle', symbolSize: 4, lineStyle: { width: 2, color: '#42a5f5' }, smooth: true },
+          { name: '營業利益率', type: 'line', data: data.operatingMargin, symbol: 'circle', symbolSize: 4, lineStyle: { width: 2, color: '#66bb6a' }, smooth: true },
+          { name: '淨利率', type: 'line', data: data.netMargin, symbol: 'circle', symbolSize: 4, lineStyle: { width: 2, color: '#ffca28' }, smooth: true }
+        ]
+      });
+    }
+
+    // ===== Balance Sheet =====
+    function renderBalance(area, data) {
+      const title1 = document.createElement('p');
+      title1.className = 'sub-title';
+      title1.textContent = '▸ 資產 / 負債 / 股東權益（季）';
+      area.appendChild(title1);
+
+      const c1 = createChart(area, '350px');
+      c1.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(20,20,40,0.95)', borderColor: '#555', textStyle: { color: '#ddd' } },
+        legend: { data: ['總資產', '總負債', '股東權益'], textStyle: { color: '#aaa' }, top: 5 },
+        grid: { left: '6%', right: '4%', top: '15%', bottom: '12%' },
+        xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#888', fontSize: 10, rotate: 30 }, axisLine: { lineStyle: { color: '#444' } } },
+        yAxis: { type: 'value', axisLabel: { color: '#aaa' }, splitLine: { lineStyle: { color: '#1e2a4a' } } },
+        series: [
+          { name: '總資產', type: 'bar', stack: 'all', data: data.totalAssets, barMaxWidth: 20, itemStyle: { color: 'rgba(67,97,238,0.6)' } },
+          { name: '總負債', type: 'bar', stack: 'liab', data: data.totalLiabilities, barMaxWidth: 20, itemStyle: { color: 'rgba(239,83,80,0.5)' } },
+          { name: '股東權益', type: 'bar', stack: 'liab', data: data.equity, barMaxWidth: 20, itemStyle: { color: 'rgba(102,187,106,0.5)' } }
+        ]
+      });
+
+      // Debt ratio
+      const title2 = document.createElement('p');
+      title2.className = 'sub-title';
+      title2.textContent = '▸ 負債比率（季）';
+      area.appendChild(title2);
+
+      const c2 = createChart(area, '220px');
+      c2.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(20,20,40,0.95)', borderColor: '#555', textStyle: { color: '#ddd' } },
+        grid: { left: '6%', right: '4%', top: '12%', bottom: '12%' },
+        xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#888', fontSize: 10, rotate: 30 }, axisLine: { lineStyle: { color: '#444' } } },
+        yAxis: { type: 'value', name: '%', min: 0, max: 100, axisLabel: { color: '#aaa' }, splitLine: { lineStyle: { color: '#1e2a4a' } } },
+        series: [
+          { name: '負債比率', type: 'line', data: data.debtRatio, symbol: 'circle', symbolSize: 4, lineStyle: { width: 2, color: '#ef5350' }, areaStyle: { color: 'rgba(239,83,80,0.1)' } }
+        ]
+      });
+    }
+
+    // ===== Cash Flow =====
+    function renderCashflow(area, data) {
+      const title1 = document.createElement('p');
+      title1.className = 'sub-title';
+      title1.textContent = '▸ 三大現金流量 + 自由現金流（季）';
+      area.appendChild(title1);
+
+      const c1 = createChart(area, '400px');
+      c1.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', backgroundColor: 'rgba(20,20,40,0.95)', borderColor: '#555', textStyle: { color: '#ddd' } },
+        legend: { data: ['營業現金流', '投資現金流', '融資現金流', '自由現金流'], textStyle: { color: '#aaa' }, top: 5 },
+        grid: { left: '6%', right: '4%', top: '15%', bottom: '12%' },
+        xAxis: { type: 'category', data: data.dates, axisLabel: { color: '#888', fontSize: 10, rotate: 30 }, axisLine: { lineStyle: { color: '#444' } } },
+        yAxis: { type: 'value', axisLabel: { color: '#aaa' }, splitLine: { lineStyle: { color: '#1e2a4a' } } },
+        series: [
+          { name: '營業現金流', type: 'bar', data: data.operating, barMaxWidth: 16, itemStyle: { color: 'rgba(102,187,106,0.7)' } },
+          { name: '投資現金流', type: 'bar', data: data.investing, barMaxWidth: 16, itemStyle: { color: 'rgba(239,83,80,0.7)' } },
+          { name: '融資現金流', type: 'bar', data: data.financing, barMaxWidth: 16, itemStyle: { color: 'rgba(255,183,77,0.7)' } },
+          { name: '自由現金流', type: 'line', data: data.freeCashFlow, symbol: 'circle', symbolSize: 5, lineStyle: { width: 2.5, color: '#ce93d8' }, itemStyle: { color: '#ce93d8' } }
+        ]
+      });
+    }
+  </script>
+</body>
+</html>

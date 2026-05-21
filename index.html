@@ -1,80 +1,26 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>?�股?��?平台</title>
+  <title>台股分析平台</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    .hero {
-      text-align: center;
-      padding: 60px 20px 40px;
-    }
-    .hero h1 {
-      font-size: 32px;
-      color: #fff;
-      margin-bottom: 12px;
-    }
-    .hero p {
-      font-size: 16px;
-      color: #aaa;
-      margin-bottom: 30px;
-    }
-    .hero-search {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      max-width: 400px;
-      margin: 0 auto;
-    }
-    .hero-search input {
-      flex: 1;
-      padding: 12px 18px;
-      font-size: 18px;
-      border: 2px solid #4361ee;
-      border-radius: 8px;
-      background: #1a1a2e;
-      color: #fff;
-    }
+    .hero { text-align: center; padding: 60px 20px 40px; }
+    .hero h1 { font-size: 32px; color: #fff; margin-bottom: 12px; }
+    .hero p { font-size: 16px; color: #aaa; margin-bottom: 30px; }
+    .hero-search { display: flex; justify-content: center; gap: 10px; max-width: 400px; margin: 0 auto; }
+    .hero-search input { flex: 1; padding: 12px 18px; font-size: 18px; border: 2px solid #4361ee; border-radius: 8px; background: #1a1a2e; color: #fff; }
     .hero-search input:focus { outline: none; border-color: #6c9bff; }
-    .hero-search button {
-      padding: 12px 28px;
-      font-size: 18px;
-      background: #4361ee;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+    .hero-search button { padding: 12px 28px; font-size: 18px; background: #4361ee; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
     .hero-search button:hover { background: #3a56d4; }
-    .modules {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      margin-top: 40px;
-    }
-    .module-card {
-      background: #16213e;
-      border-radius: 10px;
-      padding: 24px;
-      text-decoration: none;
-      color: #eee;
-      border: 1px solid #2a2a4a;
-      transition: transform 0.2s, border-color 0.2s;
-    }
+    .modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 40px; }
+    .module-card { background: #16213e; border-radius: 10px; padding: 24px; text-decoration: none; color: #eee; border: 1px solid #2a2a4a; transition: transform 0.2s, border-color 0.2s; }
     .module-card:hover { transform: translateY(-3px); border-color: #4361ee; }
     .module-card .icon { font-size: 32px; margin-bottom: 10px; }
     .module-card h3 { font-size: 17px; margin-bottom: 6px; color: #fff; }
     .module-card p { font-size: 13px; color: #888; line-height: 1.5; }
-    .module-card .tag {
-      display: inline-block;
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 3px;
-      margin-top: 8px;
-      background: #1b5e20;
-      color: #a5d6a7;
-    }
+    .module-card .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 3px; margin-top: 8px; background: #1b5e20; color: #a5d6a7; }
     .module-card .tag.wip { background: #4a3000; color: #ffcc80; }
   </style>
 </head>
@@ -82,69 +28,60 @@
   <script src="js/nav.js"></script>
   <div class="page-container">
     <div class="hero">
-      <h1>?? ?�股?��?平台</h1>
-      <p>?�術�???· 財報視覺??· 估值走??· 條件?�股 · ?�業?��???/p>
+      <h1>台股分析平台</h1>
+      <p>技術分析 · 財報視覺化 · 估值走勢 · 條件選股 · 產業熱力圖</p>
       <div class="hero-search">
-        <input type="text" id="heroInput" placeholder="輸入?�票�?? (�?2330)" maxlength="6" />
-        <button id="heroBtn">?��?</button>
+        <input type="text" id="heroInput" placeholder="輸入股票代號 (如 2330)" maxlength="6" />
+        <button id="heroBtn">分析</button>
       </div>
     </div>
-
     <div class="modules">
       <a class="module-card" href="chart.html" id="linkChart">
-        <div class="icon">??</div>
-        <h3>K線�?術�???/h3>
-        <p>互�?�?K 線�?，支?�日/????K，內�?MA?�MACD?�RSI?��??�通�??��?交�??��???/p>
-        <span class="tag">已�?�?/span>
+        <div class="icon">📈</div>
+        <h3>K線技術分析</h3>
+        <p>互動式 K 線圖，支援日/週/月 K，內建 MA、MACD、RSI、布林通道與成交量指標。</p>
+        <span class="tag">已上線</span>
       </a>
       <a class="module-card" href="valuation.html" id="linkValuation">
-        <div class="icon">??</div>
-        <h3>估值走??/ PE 河�???/h3>
-        <p>?��?比河流�? + PE/PB/殖利?�歷?�走?��?一?��??�目?�估?�是?��??�歷?��?低�???/p>
-        <span class="tag">已�?�?/span>
+        <div class="icon">🌊</div>
+        <h3>估值走勢 / PE 河流圖</h3>
+        <p>本益比河流圖 + PE/PB/殖利率歷史走勢，一眼看出目前估值是否處於歷史高低位。</p>
+        <span class="tag">已上線</span>
       </a>
       <a class="module-card" href="financials.html" id="linkFinancials">
-        <div class="icon">??</div>
-        <h3>財報視覺??/h3>
-        <p>?��?表、�??��??�表?�現?��??�表?��??�收趨勢，以?�表?�現財�??��?變�???/p>
-        <span class="tag wip">?�發�?/span>
+        <div class="icon">📋</div>
+        <h3>財報視覺化</h3>
+        <p>損益表、資產負債表、現金流量表、月營收趨勢，以圖表呈現財務數據變化。</p>
+        <span class="tag">已上線</span>
       </a>
       <a class="module-card" href="screener.html" id="linkScreener">
-        <div class="icon">??</div>
-        <h3>條件?�股??/h3>
-        <p>多維度篩?��?PE?�PB?��??��??�ROE，混?�基?�面?��?術面條件?�出潛�??��?/p>
-        <span class="tag wip">?�發�?/span>
+        <div class="icon">🔍</div>
+        <h3>條件選股器</h3>
+        <p>多維度篩選：PE、PB、殖利率、ROE，混合基本面與技術面條件找出潛力股。</p>
+        <span class="tag wip">開發中</span>
       </a>
       <a class="module-card" href="heatmap.html" id="linkHeatmap">
-        <div class="icon">?���?/div>
-        <h3>?�業?��???/h3>
-        <p>�?Finviz 介面，方塊大小代表�??�、�?綠深淺代表漲跌�?，�??��??��??��??��?/p>
-        <span class="tag wip">?�發�?/span>
+        <div class="icon">🗺️</div>
+        <h3>產業熱力圖</h3>
+        <p>仿 Finviz 介面，方塊大小代表市值、紅綠深淺代表漲跌幅，一眼掌握資金流向。</p>
+        <span class="tag wip">開發中</span>
       </a>
     </div>
   </div>
-
   <script>
     const heroInput = document.getElementById('heroInput');
     const heroBtn = document.getElementById('heroBtn');
-
     heroBtn.addEventListener('click', () => {
       const stock = heroInput.value.trim();
-      if (stock && /^\d{4,6}$/.test(stock)) {
-        window.location.href = `chart.html?stock=${stock}`;
-      }
+      if (stock && /^\d{4,6}$/.test(stock)) window.location.href = 'chart.html?stock=' + stock;
     });
-    heroInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') heroBtn.click();
-    });
-
-    // Append stock param to module links if entered
+    heroInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') heroBtn.click(); });
     heroInput.addEventListener('input', () => {
       const stock = heroInput.value.trim();
       if (/^\d{4,6}$/.test(stock)) {
         document.querySelectorAll('.module-card').forEach(a => {
           const base = a.getAttribute('href').split('?')[0];
-          a.setAttribute('href', `${base}?stock=${stock}`);
+          a.setAttribute('href', base + '?stock=' + stock);
         });
       }
     });

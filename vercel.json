@@ -5,6 +5,9 @@
     },
     "api/getStockChart.js": {
       "maxDuration": 60
+    },
+    "api/getFinancials.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
