@@ -58,26 +58,105 @@ function aggregateMonthlyOHLC(dailyData) {
 }
 
 // Fetch EPS from MOPS (公開資訊觀測站) - quarterly financial data
+// Uses multiple parsing strategies as MOPS HTML structure changes periodically
 async function fetchQuarterlyEPS(stockNo, year, season) {
-  // year: 民國年, season: 1-4
-  const url = `https://mops.twse.com.tw/mops/web/ajax_t163sb04`;
-  const body = `encodeURIComponent=1&step=1&firstin=1&off=1&co_id=${stockNo}&year=${year}&season=${String(season).padStart(2, '0')}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    },
-    body,
-  });
-  const html = await res.text();
-  // Parse EPS from HTML table - look for "基本每股盈餘"
-  const epsMatch = html.match(/基本每股盈餘[^<]*<[^>]*>[^<]*<[^>]*>([^<]+)/);
-  if (epsMatch) {
-    const eps = parseFloat(epsMatch[1].replace(/,/g, ''));
-    return isNaN(eps) ? null : eps;
-  }
+  // Try primary source: MOPS ajax_t163sb04 (損益表)
+  let eps = await fetchEPSFromMOPS_t163sb04(stockNo, year, season);
+  if (eps !== null) return eps;
+
+  // Fallback: MOPS ajax_t164sb04 (個別損益表，IFRSs)
+  eps = await fetchEPSFromMOPS_t164sb04(stockNo, year, season);
+  if (eps !== null) return eps;
+
+  console.warn(`EPS not found for ${stockNo} Y${year}Q${season}`);
   return null;
+}
+
+// Primary: 綜合損益表 (t163sb04)
+async function fetchEPSFromMOPS_t163sb04(stockNo, year, season) {
+  try {
+    const url = `https://mops.twse.com.tw/mops/web/ajax_t163sb04`;
+    const body = `encodeURIComponent=1&step=1&firstin=1&off=1&co_id=${stockNo}&year=${year}&season=${String(season).padStart(2, '0')}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      body,
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    return parseEPSFromHTML(html);
+  } catch (e) {
+    return null;
+  }
+}
+
+// Fallback: 個別財務報表損益表 (t164sb04)
+async function fetchEPSFromMOPS_t164sb04(stockNo, year, season) {
+  try {
+    const url = `https://mops.twse.com.tw/mops/web/ajax_t164sb04`;
+    const body = `encodeURIComponent=1&step=1&firstin=1&off=1&co_id=${stockNo}&year=${year}&season=${String(season).padStart(2, '0')}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      body,
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    return parseEPSFromHTML(html);
+  } catch (e) {
+    return null;
+  }
+}
+
+// Multi-strategy EPS parser from MOPS HTML
+function parseEPSFromHTML(html) {
+  if (!html || html.length < 100) return null;
+
+  // Strategy 1: "基本每股盈餘" followed by TD with value
+  // Pattern: <td>基本每股盈餘</td><td>...</td><td>VALUE</td>
+  const patterns = [
+    // 基本每股盈餘（合併）- most common
+    /基本每股盈餘[^<]*<\/t[dh]>\s*<t[dh][^>]*>\s*([^<]+)/i,
+    // With possible nested tags
+    /基本每股盈餘[^<]*<[^>]*>[^<]*<[^>]*>([^<]+)/i,
+    // 基本每股盈餘（稀釋前）
+    /基本每股盈餘（稀釋前）[^<]*<[^>]*>[^<]*<[^>]*>([^<]+)/i,
+    // English label variant
+    /Basic\s+earnings\s+per\s+share[^<]*<[^>]*>[^<]*<[^>]*>([^<]+)/i,
+    // Broader: look for EPS row with numbers
+    /每股盈餘[^<]*<\/t[dh]>[^<]*(?:<t[dh][^>]*>[^<]*<\/t[dh]>[^<]*)*<t[dh][^>]*>\s*([-\d.,]+)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match) {
+      const rawValue = match[1].trim().replace(/,/g, '').replace(/\s/g, '');
+      const eps = parseFloat(rawValue);
+      if (!isNaN(eps) && Math.abs(eps) < 500) { // Sanity check: EPS shouldn't exceed 500
+        return eps;
+      }
+    }
+  }
+
+  // Strategy 2: Find all numeric values in rows containing "每股盈餘"
+  const rowMatch = html.match(/<tr[^>]*>(?:[^]*?)每股盈餘(?:[^]*?)<\/tr>/i);
+  if (rowMatch) {
+    const tdValues = [...rowMatch[0].matchAll(/<td[^>]*>\s*([-\d.,]+)\s*<\/td>/g)];
+    if (tdValues.length > 0) {
+      // Take the first numeric value in the EPS row
+      const eps = parseFloat(tdValues[0][1].replace(/,/g, ''));
+      if (!isNaN(eps) && Math.abs(eps) < 500) return eps;
+    }
+  }
+
+  return null;
+}
 }
 
 // Calculate trailing 4-quarter EPS for each point in time
