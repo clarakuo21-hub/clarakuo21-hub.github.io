@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PE River Chart API - 使用 FinMind API
  *
  * 資料來源:
