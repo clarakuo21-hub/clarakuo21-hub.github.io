@@ -157,7 +157,6 @@ function parseEPSFromHTML(html) {
 
   return null;
 }
-}
 
 // Calculate trailing 4-quarter EPS for each point in time
 function computeTrailingEPS(quarterlyData) {
@@ -203,12 +202,12 @@ module.exports = async function handler(req, res) {
     const currentMonth = now.getMonth() + 1;
     const rocYear = currentYear - 1911; // 民國年
 
-    // Fetch quarterly EPS for last 3 years (12+ quarters for trailing calc)
+    // Fetch quarterly EPS for last 2 years (8 quarters + buffer for trailing calc)
     const quarterlyData = [];
-    for (let y = rocYear - 3; y <= rocYear; y++) {
+    for (let y = rocYear - 2; y <= rocYear; y++) {
       const maxSeason = y === rocYear ? Math.min(Math.floor((currentMonth - 1) / 3), 4) : 4;
       for (let s = 1; s <= maxSeason; s++) {
-        await delay(350); // Avoid rate limiting
+        await delay(200); // Avoid rate limiting
         const eps = await fetchQuarterlyEPS(stockNo, y, s);
         quarterlyData.push({ year: y, season: s, eps: eps || 0 });
       }
@@ -220,12 +219,12 @@ module.exports = async function handler(req, res) {
       return res.status(404).json({ error: '無法取得足夠的 EPS 資料' });
     }
 
-    // Fetch monthly stock prices (OHLC) for last 3 years
+    // Fetch monthly stock prices (OHLC) for last 2 years
     const priceData = [];
-    for (let y = currentYear - 2; y <= currentYear; y++) {
+    for (let y = currentYear - 1; y <= currentYear; y++) {
       const maxMonth = y === currentYear ? currentMonth : 12;
       for (let m = 1; m <= maxMonth; m++) {
-        await delay(350);
+        await delay(200);
         const dailyPrices = await fetchMonthlyPrices(stockNo, y, m);
         if (dailyPrices.length > 0) {
           const ohlc = aggregateMonthlyOHLC(dailyPrices);
