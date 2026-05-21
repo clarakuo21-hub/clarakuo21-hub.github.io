@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K線技術分析 - 台股分析平台</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <style>
+    .chart-controls {
+      display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center;
+    }
+    .chart-controls .group { display: flex; gap: 4px; }
+    .chart-controls button {
+      padding: 5px 12px; font-size: 12px; background: #2a2a3e; color: #ccc;
+      border: 1px solid #444; border-radius: 4px; cursor: pointer;
+    }
+    .chart-controls button:hover { background: #3a3a5e; color: #fff; }
+    .chart-controls button.active { background: #4361ee; color: #fff; border-color: #4361ee; }
+    .chart-controls label { font-size: 12px; color: #aaa; margin-left: 12px; }
+    #mainChart { width: 100%; height: 600px; }
+    .stock-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+    .stock-header h2 { font-size: 20px; color: #fff; }
+    .stock-header .price { font-size: 22px; font-weight: 700; }
+    .stock-header .price.up { color: #ef5350; }
+    .stock-header .price.down { color: #26a69a; }
+    .stock-header .change { font-size: 14px; }
+  </style>
+</head>
+<body>
+  <script src="js/nav.js"></script>
+  <div class="page-container">
+    <div class="error-msg" id="error"></div>
+    <div class="loading" id="loading">⏳ 載入中...</div>
+    <div class="card" id="chartCard" style="display:none;">
+      <div class="stock-header" id="stockHeader"></div>
+      <div class="chart-controls">
+        <div class="group" id="periodBtns">
+          <button data-period="D" data-months="3" class="active">日K 3月</button>
+          <button data-period="D" data-months="6">日K 6月</button>
+          <button data-period="D" data-months="12">日K 1年</button>
+          <button data-period="W" data-months="12">週K</button>
+          <button data-period="M" data-months="24">月K</button>
+        </div>
+        <label><input type="checkbox" id="showBoll" checked /> 布林通道</label>
+        <label><input type="checkbox" id="showMA" checked /> 均線</label>
+      </div>
+      <div id="mainChart"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let chart = null;
+    let chartData = null;
+
+    // Auto-load if stock in URL
+    window.addEventListener('DOMContentLoaded', () => {
+      const stock = NavUtil.getStock();
+      if (stock) loadChart(stock, 'D', 3);
+    });
+
+    // Period buttons
+    document.getElementById('periodBtns').addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      document.querySelectorAll('#periodBtns button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const stock = NavUtil.getStock();
+      if (stock) loadChart(stock, btn.dataset.period, parseInt(btn.dataset.months));
+    });
+
+    // Toggle indicators
+    document.getElementById('showBoll').addEventListener('change', rebuildChart);
+    document.getElementById('showMA').addEventListener('change', rebuildChart);
+
+    async function loadChart(stock, period, months) {
+      const loading = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      const chartCard = document.getElementById('chartCard');
+
+      errorDiv.classList.remove('show');
+      loading.classList.add('show');
+      chartCard.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/getStockChart?stock=${stock}&period=${period}&months=${months}`);
+        const data = await res.json();
+        if (!res.ok) { showError(data.error || '查詢失敗'); return; }
+        chartData = data;
+        chartCard.style.display = 'block';
+        updateHeader(data);
+        rebuildChart();
+      } catch (err) {
+        showError('網路錯誤: ' + err.message);
+      } finally {
+        loading.classList.remove('show');
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.classList.add('show');
+      document.getElementById('loading').classList.remove('show');
+    }
+
+    function updateHeader(data) {
+      const hdr = document.getElementById('stockHeader');
+      const last = data.ohlc[data.ohlc.length - 1];
+      const prev = data.ohlc.length > 1 ? data.ohlc[data.ohlc.length - 2][1] : last[0];
+      const close = last[1];
+      const change = close - prev;
+      const pct = ((change / prev) * 100).toFixed(2);
+      const cls = change >= 0 ? 'up' : 'down';
+      const sign = change >= 0 ? '+' : '';
+      hdr.innerHTML = `
+        <h2>${data.stockNo}</h2>
+        <span class="price ${cls}">${close}</span>
+        <span class="change ${cls}">${sign}${change.toFixed(2)} (${sign}${pct}%)</span>
+        ${data.cached ? '<span class="badge badge-green">快取</span>' : ''}
+      `;
+    }
+
+    function rebuildChart() {
+      if (!chartData) return;
+      const data = chartData;
+      const showMA = document.getElementById('showMA').checked;
+      const showBoll = document.getElementById('showBoll').checked;
+
+      const chartDom = document.getElementById('mainChart');
+      if (chart) chart.dispose();
+      chart = echarts.init(chartDom, 'dark');
+
+      const series = [];
+
+      // Candlestick
+      series.push({
+        name: 'K線',
+        type: 'candlestick',
+        data: data.ohlc,
+        itemStyle: { color: '#ef5350', color0: '#26a69a', borderColor: '#ef5350', borderColor0: '#26a69a' },
+        barMaxWidth: 12,
+      });
+
+      // MA lines
+      if (showMA) {
+        const maColors = { ma5: '#ffeb3b', ma10: '#ff9800', ma20: '#e91e63', ma60: '#9c27b0' };
+        for (const [key, color] of Object.entries(maColors)) {
+          series.push({
+            name: key.toUpperCase(),
+            type: 'line',
+            data: data[key],
+            symbol: 'none',
+            lineStyle: { width: 1, color },
+            smooth: false,
+            z: 5,
+          });
+        }
+      }
+
+      // Bollinger Bands
+      if (showBoll) {
+        series.push({
+          name: 'BB Upper',
+          type: 'line',
+          data: data.bollinger.upper,
+          symbol: 'none',
+          lineStyle: { width: 1, color: 'rgba(150,150,255,0.6)', type: 'dotted' },
+          z: 4,
+        });
+        series.push({
+          name: 'BB Lower',
+          type: 'line',
+          data: data.bollinger.lower,
+          symbol: 'none',
+          lineStyle: { width: 1, color: 'rgba(150,150,255,0.6)', type: 'dotted' },
+          areaStyle: { color: 'rgba(100,100,200,0.05)' },
+          z: 4,
+        });
+      }
+
+      // Volume bars
+      series.push({
+        name: '成交量',
+        type: 'bar',
+        xAxisIndex: 1,
+        yAxisIndex: 1,
+        data: data.volume.map((v, i) => ({
+          value: v,
+          itemStyle: { color: data.ohlc[i][1] >= data.ohlc[i][0] ? 'rgba(239,83,80,0.5)' : 'rgba(38,166,154,0.5)' }
+        })),
+        barMaxWidth: 12,
+      });
+
+      // MACD
+      series.push({
+        name: 'MACD',
+        type: 'bar',
+        xAxisIndex: 2,
+        yAxisIndex: 2,
+        data: data.macd.histogram.map(v => ({
+          value: v,
+          itemStyle: { color: v >= 0 ? 'rgba(239,83,80,0.7)' : 'rgba(38,166,154,0.7)' }
+        })),
+        barMaxWidth: 6,
+      });
+      series.push({
+        name: 'DIF',
+        type: 'line',
+        xAxisIndex: 2, yAxisIndex: 2,
+        data: data.macd.dif,
+        symbol: 'none',
+        lineStyle: { width: 1, color: '#ffeb3b' },
+      });
+      series.push({
+        name: 'DEA',
+        type: 'line',
+        xAxisIndex: 2, yAxisIndex: 2,
+        data: data.macd.dea,
+        symbol: 'none',
+        lineStyle: { width: 1, color: '#42a5f5' },
+      });
+
+      // RSI
+      series.push({
+        name: 'RSI',
+        type: 'line',
+        xAxisIndex: 3, yAxisIndex: 3,
+        data: data.rsi,
+        symbol: 'none',
+        lineStyle: { width: 1.5, color: '#ce93d8' },
+      });
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: false,
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'cross' },
+          backgroundColor: 'rgba(20,20,40,0.95)',
+          borderColor: '#555',
+          textStyle: { fontSize: 12, color: '#ddd' },
+        },
+        axisPointer: { link: [{ xAxisIndex: 'all' }] },
+        grid: [
+          { left: '6%', right: '3%', top: '4%', height: '42%' },   // K-line
+          { left: '6%', right: '3%', top: '50%', height: '10%' },  // Volume
+          { left: '6%', right: '3%', top: '63%', height: '13%' },  // MACD
+          { left: '6%', right: '3%', top: '79%', height: '12%' },  // RSI
+        ],
+        xAxis: [
+          { type: 'category', data: data.dates, gridIndex: 0, axisLabel: { show: false }, axisLine: { lineStyle: { color: '#444' } } },
+          { type: 'category', data: data.dates, gridIndex: 1, axisLabel: { show: false }, axisLine: { lineStyle: { color: '#444' } } },
+          { type: 'category', data: data.dates, gridIndex: 2, axisLabel: { show: false }, axisLine: { lineStyle: { color: '#444' } } },
+          { type: 'category', data: data.dates, gridIndex: 3, axisLabel: { color: '#888', fontSize: 10 }, axisLine: { lineStyle: { color: '#444' } } },
+        ],
+        yAxis: [
+          { scale: true, gridIndex: 0, splitLine: { lineStyle: { color: '#1e2a4a' } }, axisLabel: { color: '#aaa', fontSize: 10 } },
+          { scale: true, gridIndex: 1, splitLine: { show: false }, axisLabel: { show: false } },
+          { scale: true, gridIndex: 2, splitLine: { lineStyle: { color: '#1e2a4a' } }, axisLabel: { color: '#aaa', fontSize: 10 } },
+          { scale: true, gridIndex: 3, min: 0, max: 100, splitLine: { lineStyle: { color: '#1e2a4a' } }, axisLabel: { color: '#aaa', fontSize: 10 } },
+        ],
+        dataZoom: [
+          { type: 'inside', xAxisIndex: [0, 1, 2, 3], start: 60, end: 100 },
+          { type: 'slider', xAxisIndex: [0, 1, 2, 3], start: 60, end: 100, height: 18, bottom: 5, borderColor: '#444', textStyle: { color: '#aaa' } },
+        ],
+        series,
+      };
+
+      // RSI reference lines
+      option.yAxis[3].axisPointer = { show: true };
+      series.push(
+        { name: 'RSI 70', type: 'line', xAxisIndex: 3, yAxisIndex: 3, data: data.dates.map(() => 70), symbol: 'none', lineStyle: { width: 1, color: 'rgba(239,83,80,0.4)', type: 'dashed' } },
+        { name: 'RSI 30', type: 'line', xAxisIndex: 3, yAxisIndex: 3, data: data.dates.map(() => 30), symbol: 'none', lineStyle: { width: 1, color: 'rgba(38,166,154,0.4)', type: 'dashed' } }
+      );
+
+      chart.setOption(option);
+      window.addEventListener('resize', () => chart && chart.resize());
+    }
+  </script>
+</body>
+</html>

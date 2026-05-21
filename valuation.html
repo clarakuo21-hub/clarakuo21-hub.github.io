@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>估值走勢 / PE河流圖 - 台股分析平台</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft JhengHei', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #fff;
+      font-size: 24px;
+    }
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .search-bar input {
+      padding: 10px 16px;
+      font-size: 16px;
+      border: 1px solid #444;
+      border-radius: 6px;
+      background: #2a2a3e;
+      color: #fff;
+      width: 180px;
+    }
+    .search-bar input:focus {
+      outline: none;
+      border-color: #6c9bff;
+    }
+    .search-bar button {
+      padding: 10px 24px;
+      font-size: 16px;
+      background: #4361ee;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .search-bar button:hover { background: #3a56d4; }
+    .search-bar button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    .chart-wrapper {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .info-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 0 8px;
+    }
+    .info-bar .stock-info { font-size: 18px; font-weight: 600; color: #fff; }
+    .info-bar .detail-info { font-size: 14px; color: #aaa; }
+    .info-bar .detail-info span { margin-right: 16px; }
+    .info-bar .cache-badge {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      background: #1b5e20;
+      color: #a5d6a7;
+    }
+    #chartContainer { width: 100%; height: 550px; }
+    #loading {
+      display: none;
+      text-align: center;
+      padding: 80px 20px;
+      font-size: 18px;
+      color: #aaa;
+    }
+    #loading.show { display: block; }
+    #error {
+      display: none;
+      text-align: center;
+      padding: 16px;
+      color: #ef5350;
+      background: rgba(244,67,54,0.1);
+      border: 1px solid rgba(244,67,54,0.3);
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    #error.show { display: block; }
+    .legend-bar {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: #ccc;
+    }
+    .legend-color {
+      width: 20px;
+      height: 12px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <script src="js/nav.js"></script>
+  <div class="container">
+    <h1>📈 估值走勢 / 本益比河流圖 (P/E River Chart)</h1>
+    <div class="search-bar">
+      <input type="text" id="stockInput" placeholder="?∠巨隞?? (靘? 2330)" maxlength="6" />
+      <button id="searchBtn" onclick="queryStock()">?亥岷</button>
+    </div>
+    <div id="error"></div>
+    <div class="chart-wrapper">
+      <div class="info-bar" id="infoBar" style="display:none;">
+        <div>
+          <span class="stock-info" id="stockInfo"></span>
+          <span class="cache-badge" id="cacheBadge" style="display:none;">敹怠?</span>
+        </div>
+        <div class="detail-info" id="detailInfo"></div>
+      </div>
+      <div id="loading">??甇?敺?鈭斗???鞈?嚗?甈⊥閰Ｙ?? 30-60 蝘?..</div>
+      <div id="chartContainer"></div>
+    </div>
+    <div class="legend-bar" id="legendBar"></div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let myChart = null;
+
+    // PE band colors matching the spec
+    const BAND_COLORS = [
+      { bg: 'rgba(100,181,246,0.35)', border: '#64b5f6', label: '?瘛箄?' },  // 5.1??      { bg: 'rgba(79,195,247,0.35)',  border: '#4fc3f7', label: '瘛箄?' },    // 9.8??      { bg: 'rgba(178,223,138,0.4)',  border: '#b2df8a', label: '瘛粹?蝬? },  // 14.5??      { bg: 'rgba(255,245,157,0.4)',  border: '#fff59d', label: '瘛⊿?' },    // 19.2??      { bg: 'rgba(255,204,128,0.4)',  border: '#ffcc80', label: '瘛⊥?' },    // 23.8??      { bg: 'rgba(239,154,154,0.4)',  border: '#ef9a9a', label: '瘛∠?' },    // 28.5??    ];
+
+    document.getElementById('stockInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') queryStock();
+    });
+
+    async function queryStock() {
+      const input = document.getElementById('stockInput');
+      const btn = document.getElementById('searchBtn');
+      const loading = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      const infoBar = document.getElementById('infoBar');
+      const chartEl = document.getElementById('chartContainer');
+
+      const stockNo = input.value.trim();
+      if (!stockNo || !/^\d{4,6}$/.test(stockNo)) {
+        showError('隢撓?交????∠巨隞??嚗?-6 雿摮?');
+        return;
+      }
+
+      errorDiv.classList.remove('show');
+      loading.classList.add('show');
+      chartEl.style.display = 'none';
+      btn.disabled = true;
+      infoBar.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/getPeRiver?stock=${encodeURIComponent(stockNo)}`);
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || '?亥岷憭望?');
+          return;
+        }
+        chartEl.style.display = 'block';
+        renderChart(data);
+      } catch (err) {
+        showError('蝬脰楝?航炊: ' + err.message);
+      } finally {
+        loading.classList.remove('show');
+        btn.disabled = false;
+      }
+    }
+
+    function showError(msg) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = msg;
+      errorDiv.classList.add('show');
+      document.getElementById('loading').classList.remove('show');
+      document.getElementById('searchBtn').disabled = false;
+    }
+
+    function renderChart(data) {
+      const infoBar = document.getElementById('infoBar');
+      const stockInfo = document.getElementById('stockInfo');
+      const detailInfo = document.getElementById('detailInfo');
+      const cacheBadge = document.getElementById('cacheBadge');
+
+      infoBar.style.display = 'flex';
+      stockInfo.textContent = `${data.stockNo}`;
+      cacheBadge.style.display = data.cached ? 'inline' : 'none';
+
+      // Detail info
+      let detailHTML = `<span>餈?摮ΒPS(TTM): <b>${data.latestEPS}</b></span>`;
+      if (data.lastPrice) {
+        detailHTML += `<span>?嗥: <b>${data.lastPrice.close}</b></span>`;
+      }
+      if (data.currentPE) {
+        detailHTML += `<span>?桀?P/E: <b>${data.currentPE}??/b></span>`;
+      }
+      detailInfo.innerHTML = detailHTML;
+
+      // Build legend
+      const legendBar = document.getElementById('legendBar');
+      legendBar.innerHTML = data.peBands.map((pe, i) => `
+        <div class="legend-item">
+          <div class="legend-color" style="background:${BAND_COLORS[i].bg};border:1px solid ${BAND_COLORS[i].border}"></div>
+          ${pe}??        </div>
+      `).join('') + '<div class="legend-item"><div class="legend-color" style="background:#333;border:1px solid #999"></div>K蝺?/div>';
+
+      // Initialize ECharts
+      const chartDom = document.getElementById('chartContainer');
+      if (myChart) myChart.dispose();
+      myChart = echarts.init(chartDom, 'dark');
+
+      // Prepare series: PE river bands as stacked area
+      const series = [];
+
+      // First band: area from 0 to band[0]
+      series.push({
+        name: `${data.peBands[0]}?,
+        type: 'line',
+        data: data.peRiverBands[0].values,
+        symbol: 'none',
+        lineStyle: { width: 0 },
+        areaStyle: { color: BAND_COLORS[0].bg },
+        stack: 'pe',
+        stackStrategy: 'all',
+        smooth: 0.3,
+        z: 1,
+      });
+
+      // Subsequent bands: stacked difference
+      for (let i = 1; i < data.peRiverBands.length; i++) {
+        const diffValues = data.peRiverBands[i].values.map((v, idx) =>
+          Math.round((v - data.peRiverBands[i - 1].values[idx]) * 100) / 100
+        );
+        series.push({
+          name: `${data.peBands[i]}?,
+          type: 'line',
+          data: diffValues,
+          symbol: 'none',
+          lineStyle: { width: 0 },
+          areaStyle: { color: BAND_COLORS[i].bg },
+          stack: 'pe',
+          stackStrategy: 'all',
+          smooth: 0.3,
+          z: 1,
+        });
+      }
+
+      // Candlestick (K-line) on top
+      series.push({
+        name: 'K蝺?,
+        type: 'candlestick',
+        data: data.klineData, // [open, close, low, high]
+        itemStyle: {
+          color: '#ef5350',       // 銝撞 (???? 憛怠?
+          color0: '#26a69a',      // 銝? (???? 憛怠?
+          borderColor: '#ef5350',
+          borderColor0: '#26a69a',
+        },
+        z: 10,
+      });
+
+      const option = {
+        backgroundColor: 'transparent',
+        animation: true,
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'cross' },
+          backgroundColor: 'rgba(30,30,50,0.95)',
+          borderColor: '#555',
+          textStyle: { color: '#eee', fontSize: 13 },
+          formatter: function (params) {
+            const dateIdx = params[0].dataIndex;
+            const date = data.dates[dateIdx];
+            // Find kline data
+            const kline = data.klineData[dateIdx];
+            const eps = getEPSAtIndex(data, dateIdx);
+            const closePrice = kline ? kline[1] : '-';
+            const pe = kline && eps ? (closePrice / eps).toFixed(2) : '-';
+
+            let html = `<div style="font-weight:600;margin-bottom:6px;">${date}</div>`;
+            html += `<div>餈?摮ΒPS(TTM): <b>${eps}</b></div>`;
+            if (kline) {
+              html += `<div>?? ${kline[0]} | 擃? ${kline[3]} | 雿? ${kline[2]} | ?? <b>${kline[1]}</b></div>`;
+              html += `<div>?桀?P/E: <b>${pe}??/b></div>`;
+            }
+            html += `<div style="margin-top:4px;border-top:1px solid #444;padding-top:4px;">`;
+            data.peBands.forEach((pe, i) => {
+              html += `<span style="color:${BAND_COLORS[i].border}">${pe}?? ${data.peRiverBands[i].values[dateIdx]}</span>&nbsp;&nbsp;`;
+            });
+            html += `</div>`;
+            return html;
+          },
+        },
+        grid: {
+          left: '6%',
+          right: '4%',
+          top: '8%',
+          bottom: '15%',
+        },
+        xAxis: {
+          type: 'category',
+          data: data.dates,
+          axisLine: { lineStyle: { color: '#555' } },
+          axisLabel: { color: '#aaa', fontSize: 11 },
+          splitLine: { show: false },
+        },
+        yAxis: {
+          type: 'value',
+          axisLine: { lineStyle: { color: '#555' } },
+          axisLabel: { color: '#aaa', fontSize: 11 },
+          splitLine: { lineStyle: { color: '#2a2a3e' } },
+          scale: true,
+        },
+        dataZoom: [
+          {
+            type: 'inside',
+            start: 0,
+            end: 100,
+          },
+          {
+            type: 'slider',
+            start: 0,
+            end: 100,
+            height: 20,
+            bottom: 10,
+            borderColor: '#444',
+            textStyle: { color: '#aaa' },
+          },
+        ],
+        series,
+      };
+
+      myChart.setOption(option);
+
+      // Responsive resize
+      window.addEventListener('resize', () => myChart && myChart.resize());
+    }
+
+    // Helper: get EPS at a given date index
+    function getEPSAtIndex(data, idx) {
+      const dateStr = data.dates[idx];
+      const parts = dateStr.split('/');
+      const priceYear = parseInt(parts[0]);
+      const priceMonth = parseInt(parts[1]);
+      const rocYear = priceYear - 1911;
+      const season = Math.ceil(priceMonth / 3);
+      let eps = data.latestEPS;
+      for (let i = data.trailingEPSHistory.length - 1; i >= 0; i--) {
+        const d = data.trailingEPSHistory[i];
+        if (d.year < rocYear || (d.year === rocYear && d.season <= season)) {
+          eps = d.trailingEPS;
+          break;
+        }
+      }
+      return eps;
+    }
+  </script>
+</body>
+</html>

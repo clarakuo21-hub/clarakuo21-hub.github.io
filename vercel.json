@@ -2,6 +2,9 @@
   "functions": {
     "api/getPeRiver.js": {
       "maxDuration": 60
+    },
+    "api/getStockChart.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
