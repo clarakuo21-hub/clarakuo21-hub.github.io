@@ -114,8 +114,9 @@
       const pct = ((change / prev) * 100).toFixed(2);
       const cls = change >= 0 ? 'up' : 'down';
       const sign = change >= 0 ? '+' : '';
+      const stockName = data.stockName && data.stockName !== data.stockNo ? data.stockName : '';
       hdr.innerHTML = `
-        <h2>${data.stockNo}</h2>
+        <h2>${data.stockNo}${stockName ? ` ${stockName}` : ''}</h2>
         <span class="price ${cls}">${close}</span>
         <span class="change ${cls}">${sign}${change.toFixed(2)} (${sign}${pct}%)</span>
         ${data.cached ? '<span class="badge badge-green">快取</span>' : ''}

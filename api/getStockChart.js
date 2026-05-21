@@ -180,12 +180,27 @@ module.exports = async function handler(req, res) {
     url.searchParams.set('end_date', now.toISOString().split('T')[0]);
     url.searchParams.set('token', FINMIND_TOKEN);
 
-    const apiRes = await fetch(url.toString());
-    const json = await apiRes.json();
+    const infoUrl = new URL(FINMIND_BASE);
+    infoUrl.searchParams.set('dataset', 'TaiwanStockInfo');
+    infoUrl.searchParams.set('data_id', stockNo);
+    infoUrl.searchParams.set('token', FINMIND_TOKEN);
+
+    const [apiRes, infoRes] = await Promise.all([
+      fetch(url.toString()),
+      fetch(infoUrl.toString()),
+    ]);
+    const [json, infoJson] = await Promise.all([
+      apiRes.json(),
+      infoRes.json(),
+    ]);
 
     if (json.status !== 200 || !json.data || json.data.length === 0) {
       return res.status(404).json({ error: '無法取得股價資料，請確認股票代號' });
     }
+
+    const stockName = (infoJson && infoJson.status === 200 && Array.isArray(infoJson.data) && infoJson.data.length > 0)
+      ? (infoJson.data[0].stock_name || infoJson.data[0].stock_id || stockNo)
+      : stockNo;
 
     // Aggregate based on period
     let chartData;
@@ -228,6 +243,7 @@ module.exports = async function handler(req, res) {
 
     const result = {
       stockNo,
+      stockName,
       period,
       dates: slice(dates),
       ohlc: slice(dates).map((_, i) => [opens[trimIdx + i], closes[trimIdx + i], lows[trimIdx + i], highs[trimIdx + i]]),
